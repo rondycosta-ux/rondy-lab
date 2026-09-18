@@ -1,13 +1,226 @@
+:root {
+    --bg: #111111;
+    --bg-soft: #171717;
+    --accent: #FF6A00;
+    --muted: #777777;
+    --text: #FFFFFF;
+    --line: rgba(255, 255, 255, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     margin: 0;
     min-height: 100vh;
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
 }
 
 img {
-    width: 350px;
-    max-width: 70%;
+    display: block;
+    max-width: 100%;
+}
+
+.site-header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.site-header__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+}
+
+.brand img {
+    width: 220px;
+    height: auto;
+}
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.site-nav a {
+    position: relative;
+    color: var(--text);
+    opacity: 0.8;
+    font-size: 0.96rem;
+    letter-spacing: 0.02em;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    padding: 0.4rem 0;
+}
+
+.site-nav a:hover,
+.site-nav a:focus-visible {
+    opacity: 1;
+}
+
+.site-nav a.is-active {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.site-nav a.is-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.5rem;
+    height: 2px;
+    background: var(--accent);
+}
+
+.nav-toggle {
+    display: none;
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.nav-toggle__bars,
+.nav-toggle__bars::before,
+.nav-toggle__bars::after {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: var(--text);
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.nav-toggle__bars::before,
+.nav-toggle__bars::after {
+    content: "";
+    position: absolute;
+    left: 0;
+}
+
+.nav-toggle__bars::before {
+    top: -6px;
+}
+
+.nav-toggle__bars::after {
+    top: 6px;
+}
+
+.site-header.is-open .nav-toggle__bars {
+    background: transparent;
+}
+
+.site-header.is-open .nav-toggle__bars::before {
+    top: 0;
+    transform: rotate(45deg);
+}
+
+.site-header.is-open .nav-toggle__bars::after {
+    top: 0;
+    transform: rotate(-45deg);
+}
+
+.page-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 2rem 3rem;
+}
+
+.page-title-block {
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+}
+
+.page-kicker {
+    margin: 0 0 1rem;
+    color: var(--muted);
+    font-size: 0.76rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.page-title {
+    margin: 0;
+    font-size: clamp(2.25rem, 5vw, 4rem);
+    line-height: 1.05;
+    letter-spacing: -0.05em;
+    font-weight: 700;
+}
+
+@media (max-width: 760px) {
+    .site-header__inner {
+        padding: 0.9rem 1.25rem;
+        position: relative;
+    }
+
+    .brand img {
+        width: 180px;
+    }
+
+    .nav-toggle {
+        display: inline-flex;
+    }
+
+    .site-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        padding: 0.5rem 1.25rem 1.25rem;
+        background: var(--bg);
+        border-top: 1px solid var(--line);
+    }
+
+    .site-header.is-open .site-nav {
+        display: flex;
+    }
+
+    .site-nav a {
+        width: 100%;
+        padding: 0.9rem 0;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .site-nav a.is-active::after {
+        bottom: 0.4rem;
+    }
+
+    .page-shell {
+        padding: 3rem 1.25rem 2rem;
+    }
 }
