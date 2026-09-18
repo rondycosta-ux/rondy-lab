@@ -151,6 +151,97 @@ img {
     transform: rotate(-45deg);
 }
 
+.hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 84px);
+    padding: 4.75rem 2rem 3.5rem;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    align-items: center;
+    gap: 2rem;
+}
+
+.hero__content {
+    max-width: 620px;
+}
+
+.hero__eyebrow {
+    margin: 0 0 1.5rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.hero__title {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(3rem, 7vw, 7rem);
+    line-height: 0.9;
+    letter-spacing: -0.07em;
+    font-weight: 700;
+}
+
+.hero__title--accent {
+    color: var(--accent);
+}
+
+.hero__text {
+    max-width: 540px;
+    margin: 1.75rem 0 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.18rem;
+    line-height: 1.7;
+}
+
+.hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2.25rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0.9rem 1.5rem;
+    border: 1px solid transparent;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.btn--primary {
+    background: var(--accent);
+    color: var(--text);
+}
+
+.btn--secondary {
+    background: transparent;
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.hero__visual {
+    min-height: 440px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateX(18px);
+}
+
+.hero__image {
+    width: min(100%, 675px);
+    max-height: 700px;
+    object-fit: contain;
+    display: block;
+}
+
 .page-shell {
     max-width: 1200px;
     margin: 0 auto;
@@ -218,6 +309,40 @@ img {
 
     .site-nav a.is-active::after {
         bottom: 0.4rem;
+    }
+
+    .hero {
+        min-height: auto;
+        padding: 3rem 1.25rem 2rem;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .hero__content {
+        max-width: none;
+    }
+
+    .hero__text {
+        font-size: 1rem;
+    }
+
+    .hero__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .hero__visual {
+        min-height: 220px;
+        order: 2;
+    }
+
+    .hero__image {
+        width: min(100%, 420px);
+        max-height: 320px;
     }
 
     .page-shell {
