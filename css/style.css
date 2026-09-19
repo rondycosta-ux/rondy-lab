@@ -5,6 +5,11 @@
     --muted: #777777;
     --text: #FFFFFF;
     --line: rgba(255, 255, 255, 0.08);
+    --purple: #9E69D6;
+    --yellow: #E6BE3A;
+    --turquoise: #3ECFCF;
+    --green: #71C56A;
+    --blue: #4B8DFF;
 }
 
 * {
@@ -21,6 +26,10 @@ body {
     background: var(--bg);
     color: var(--text);
     font-family: Arial, Helvetica, sans-serif;
+}
+
+main {
+    display: block;
 }
 
 a {
@@ -242,6 +251,151 @@ img {
     display: block;
 }
 
+.line-showcase {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 5rem;
+}
+
+.line-showcase__header {
+    max-width: 700px;
+    margin: 0 0 2.25rem;
+}
+
+.line-showcase__title {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(2.2rem, 4vw, 4rem);
+    line-height: 0.96;
+    letter-spacing: -0.06em;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.line-showcase__text {
+    margin: 1rem 0 0;
+    color: rgba(255, 255, 255, 0.74);
+    font-size: 1.08rem;
+    line-height: 1.7;
+}
+
+.line-showcase__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.line-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-height: 180px;
+    padding: 1.2rem 1.2rem 1rem;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--card-accent, var(--accent));
+    transition: transform 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.line-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--card-accent, var(--accent));
+}
+
+.line-card:hover,
+.line-card:focus-visible {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.line-card__icon {
+    width: 78px;
+    height: 78px;
+    display: block;
+    margin: 0 0 0.9rem;
+    transition: transform 0.25s ease;
+}
+
+.line-card:hover .line-card__icon,
+.line-card:focus-visible .line-card__icon {
+    transform: translateY(-3px);
+}
+
+.line-card__name {
+    display: block;
+    margin: 0 0 0.7rem;
+    color: var(--text);
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.line-card__description {
+    display: block;
+    margin: 0;
+    max-width: 26ch;
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.line-card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: auto;
+    padding-top: 0.9rem;
+    color: var(--card-accent, var(--accent));
+    font-size: 0.66rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    transition: color 0.25s ease;
+}
+
+.line-card__cta-arrow {
+    display: inline-block;
+    transition: transform 0.25s ease;
+}
+
+.line-card:hover .line-card__cta-arrow,
+.line-card:focus-visible .line-card__cta-arrow {
+    transform: translateX(5px);
+}
+
+.line-card--home {
+    --card-accent: var(--accent);
+}
+
+.line-card--collectibles {
+    --card-accent: var(--purple);
+}
+
+.line-card--custom {
+    --card-accent: var(--yellow);
+}
+
+.line-card--play {
+    --card-accent: var(--turquoise);
+}
+
+.line-card--pets {
+    --card-accent: var(--green);
+}
+
+.line-card--auto {
+    --card-accent: var(--blue);
+}
+
 .page-shell {
     max-width: 1200px;
     margin: 0 auto;
@@ -267,6 +421,12 @@ img {
     line-height: 1.05;
     letter-spacing: -0.05em;
     font-weight: 700;
+}
+
+@media (max-width: 980px) {
+    .line-showcase__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 760px) {
@@ -343,6 +503,33 @@ img {
     .hero__image {
         width: min(100%, 420px);
         max-height: 320px;
+    }
+
+    .line-showcase {
+        padding: 0 1.25rem 4rem;
+    }
+
+    .line-showcase__header {
+        margin-bottom: 1.5rem;
+    }
+
+    .line-showcase__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .line-card {
+        min-height: 170px;
+        padding: 1.1rem 1.1rem 0.9rem;
+    }
+
+    .line-card__icon {
+        width: 70px;
+        height: 70px;
+    }
+
+    .line-card__description {
+        max-width: 26ch;
+        font-size: 0.96rem;
     }
 
     .page-shell {
