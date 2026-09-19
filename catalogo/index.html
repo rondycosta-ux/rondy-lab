@@ -29,10 +29,75 @@
         </div>
     </header>
 
-    <main class="page-shell">
-        <div class="page-title-block">
-            <p class="page-kicker">Rondy Lab</p>
-            <h1 class="page-title">Catálogo de Produtos</h1>
+    <main class="catalog-page page-shell">
+        <section class="catalog-intro" aria-labelledby="catalog-title">
+            <p class="page-kicker">CATÁLOGO</p>
+            <h1 id="catalog-title" class="page-title catalog-title">
+                PRODUTOS QUE GANHAM<br>
+                <span class="catalog-title--accent">FORMA.</span>
+            </h1>
+            <p class="catalog-intro__text">Explore produtos, colecionáveis e soluções criadas pela Rondy Lab.</p>
+        </section>
+
+        <section class="catalog-filters" aria-label="Filtros por categoria">
+            <button class="catalog-filter is-active" type="button" data-filter="all" aria-pressed="true">TODOS</button>
+            <button class="catalog-filter" type="button" data-filter="home" aria-pressed="false">HOME</button>
+            <button class="catalog-filter" type="button" data-filter="colecionaveis" aria-pressed="false">COLECIONÁVEIS</button>
+            <button class="catalog-filter" type="button" data-filter="custom" aria-pressed="false">CUSTOM</button>
+            <button class="catalog-filter" type="button" data-filter="play" aria-pressed="false">PLAY</button>
+            <button class="catalog-filter" type="button" data-filter="pets" aria-pressed="false">PETS</button>
+            <button class="catalog-filter" type="button" data-filter="auto" aria-pressed="false">AUTO</button>
+        </section>
+
+        <section class="catalog-products" aria-live="polite">
+            <article class="catalog-product" data-category="home">
+                <a href="#" aria-label="Ver detalhes do produto Design para o dia a dia">
+                    <img src="../assets/images/prod1.jpg" alt="Design para o dia a dia">
+                    <div class="catalog-product__content">
+                        <span class="catalog-product__category catalog-product__category--home">HOME</span>
+                        <h2 class="catalog-product__name">Design para o dia a dia</h2>
+                        <span class="catalog-product__link">VER DETALHES <span aria-hidden="true">→</span></span>
+                    </div>
+                </a>
+            </article>
+
+            <article class="catalog-product" data-category="colecionaveis">
+                <a href="#" aria-label="Ver detalhes do produto Peças que ganham personalidade">
+                    <img src="../assets/images/prod2.jpg" alt="Peças que ganham personalidade">
+                    <div class="catalog-product__content">
+                        <span class="catalog-product__category catalog-product__category--colecionaveis">COLECIONÁVEIS</span>
+                        <h2 class="catalog-product__name">Peças que ganham personalidade</h2>
+                        <span class="catalog-product__link">VER DETALHES <span aria-hidden="true">→</span></span>
+                    </div>
+                </a>
+            </article>
+
+            <article class="catalog-product" data-category="custom">
+                <a href="#" aria-label="Ver detalhes do produto Feito especialmente para você">
+                    <img src="../assets/images/prod3.jpg" alt="Feito especialmente para você">
+                    <div class="catalog-product__content">
+                        <span class="catalog-product__category catalog-product__category--custom">CUSTOM</span>
+                        <h2 class="catalog-product__name">Feito especialmente para você</h2>
+                        <span class="catalog-product__link">VER DETALHES <span aria-hidden="true">→</span></span>
+                    </div>
+                </a>
+            </article>
+
+            <article class="catalog-product" data-category="play">
+                <a href="#" aria-label="Ver detalhes do produto Criatividade que vira diversão">
+                    <img src="../assets/images/prod4.jpg" alt="Criatividade que vira diversão">
+                    <div class="catalog-product__content">
+                        <span class="catalog-product__category catalog-product__category--play">PLAY</span>
+                        <h2 class="catalog-product__name">Criatividade que vira diversão</h2>
+                        <span class="catalog-product__link">VER DETALHES <span aria-hidden="true">→</span></span>
+                    </div>
+                </a>
+            </article>
+        </section>
+
+        <div class="catalog-empty" hidden>
+            <h2>NOVOS PRODUTOS EM BREVE.</h2>
+            <p>Estamos preparando novidades para esta linha.</p>
         </div>
     </main>
 

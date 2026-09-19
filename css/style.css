@@ -764,6 +764,195 @@ img {
     max-width: 30ch;
 }
 
+.catalog-page {
+    padding-top: 3rem;
+}
+
+.catalog-intro {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem 1.5rem;
+}
+
+.catalog-title {
+    margin-top: 0.75rem;
+    font-size: clamp(3rem, 5vw, 5.5rem);
+    line-height: 0.9;
+    letter-spacing: -0.07em;
+}
+
+.catalog-title--accent {
+    color: var(--accent);
+}
+
+.catalog-intro__text {
+    max-width: 620px;
+    margin: 1.25rem 0 0;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 1.08rem;
+    line-height: 1.7;
+}
+
+.catalog-filters {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.3rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.catalog-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.catalog-filter {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0.3rem 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
+
+.catalog-filter:hover,
+.catalog-filter:focus-visible {
+    color: var(--text);
+}
+
+.catalog-filter.is-active {
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent);
+}
+
+.catalog-products {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+}
+
+.catalog-product {
+    min-width: 0;
+}
+
+.catalog-product[hidden] {
+    display: none;
+}
+
+.catalog-product a {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.catalog-product img {
+    width: 100%;
+    height: 420px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.25s ease;
+}
+
+.catalog-product a:hover img,
+.catalog-product a:focus-visible img {
+    transform: scale(1.03);
+}
+
+.catalog-product__content {
+    padding-top: 1rem;
+}
+
+.catalog-product__category {
+    display: inline-block;
+    margin-bottom: 0.6rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.catalog-product__category--home {
+    color: var(--accent);
+}
+
+.catalog-product__category--colecionaveis {
+    color: var(--purple);
+}
+
+.catalog-product__category--custom {
+    color: var(--yellow);
+}
+
+.catalog-product__category--play {
+    color: var(--turquoise);
+}
+
+.catalog-product__category--pets {
+    color: var(--green);
+}
+
+.catalog-product__category--auto {
+    color: var(--blue);
+}
+
+.catalog-product__name {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(1.45rem, 2vw, 2.1rem);
+    line-height: 1.2;
+    letter-spacing: -0.05em;
+    font-weight: 600;
+}
+
+.catalog-product__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.catalog-empty {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 2rem 5rem;
+    text-align: center;
+}
+
+.catalog-empty h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(2rem, 4vw, 4rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.catalog-empty p {
+    margin: 1rem 0 0;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 1.03rem;
+    line-height: 1.7;
+}
+
 .site-footer {
     background: #111111;
     border-top: 1px solid var(--line);
@@ -990,6 +1179,22 @@ img {
         height: 360px;
     }
 
+    .catalog-intro,
+    .catalog-filters,
+    .catalog-products,
+    .catalog-empty {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+
+    .catalog-products {
+        grid-template-columns: 1fr;
+    }
+
+    .catalog-product img {
+        height: 420px;
+    }
+
     .custom-projects {
         padding: 4rem 1.25rem;
     }
@@ -1029,5 +1234,29 @@ img {
 
     .page-shell {
         padding: 3rem 1.25rem 2rem;
+    }
+}
+
+@media (max-width: 980px) {
+    .catalog-products {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .catalog-products {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 980px) {
+    .catalog-products {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .catalog-products {
+        grid-template-columns: 1fr;
     }
 }
