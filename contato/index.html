@@ -29,11 +29,56 @@
         </div>
     </header>
 
-    <main class="page-shell">
-        <div class="page-title-block">
-            <p class="page-kicker">Rondy Lab</p>
-            <h1 class="page-title">Contato</h1>
-        </div>
+    <main class="contact-page page-shell">
+        <section class="contact-intro" aria-labelledby="contact-title">
+            <p class="page-kicker">CONTATO</p>
+            <h1 id="contact-title" class="page-title contact-title">
+                VAMOS DAR FORMA À <span class="contact-title--accent">SUA IDEIA?</span>
+            </h1>
+            <p class="contact-intro__text">
+                Quer saber mais sobre um produto, pedir uma personalização ou tirar uma ideia do papel? Fale com a Rondy Lab.
+            </p>
+        </section>
+
+        <section class="contact-product" id="contact-product" hidden aria-live="polite">
+            <span class="contact-product__label">VOCÊ ESTÁ INTERESSADO EM:</span>
+            <strong class="contact-product__name" id="contact-product-name">Produto</strong>
+        </section>
+
+        <section class="contact-channels" aria-label="Canais de contato da Rondy Lab">
+            <article class="contact-channel">
+                <span class="contact-channel__name">WHATSAPP</span>
+                <p class="contact-channel__value">(11) 95496-3077</p>
+                <a
+                    id="whatsapp-link"
+                    class="contact-channel__cta"
+                    href="https://wa.me/5511954963077?text=Ol%C3%A1%21%20Vim%20pelo%20site%20da%20Rondy%20Lab%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    FALE COM A GENTE →
+                </a>
+            </article>
+
+            <article class="contact-channel">
+                <span class="contact-channel__name">INSTAGRAM</span>
+                <p class="contact-channel__value">@rondylab</p>
+                <a
+                    class="contact-channel__cta"
+                    href="https://www.instagram.com/rondylab/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    ACOMPANHE A RONDY LAB →
+                </a>
+            </article>
+
+            <article class="contact-channel">
+                <span class="contact-channel__name">E-MAIL</span>
+                <p class="contact-channel__value">rondy.costa@live.com</p>
+                <a class="contact-channel__cta" href="mailto:rondy.costa@live.com">ENVIAR E-MAIL →</a>
+            </article>
+        </section>
     </main>
 
     <footer class="site-footer">

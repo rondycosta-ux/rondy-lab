@@ -953,6 +953,118 @@ img {
     line-height: 1.7;
 }
 
+.contact-page {
+    padding-top: 3rem;
+    padding-bottom: 2rem;
+}
+
+.contact-intro {
+    max-width: 860px;
+}
+
+.contact-title {
+    margin-top: 0.75rem;
+    max-width: 760px;
+    font-size: clamp(2.7rem, 5vw, 5.5rem);
+    line-height: 0.94;
+    letter-spacing: -0.07em;
+}
+
+.contact-title--accent {
+    color: var(--accent);
+}
+
+.contact-intro__text {
+    margin: 1.5rem 0 0;
+    max-width: 620px;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 1.12rem;
+    line-height: 1.8;
+}
+
+.contact-product {
+    margin-top: 2.25rem;
+    padding: 1.15rem 1.5rem;
+    max-width: 760px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.contact-product__label {
+    display: block;
+    color: rgba(255, 255, 255, 0.64);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.contact-product__name {
+    display: block;
+    margin-top: 0.55rem;
+    color: var(--text);
+    font-size: clamp(1.15rem, 2vw, 2rem);
+    line-height: 1.25;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+}
+
+.contact-channels {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin-top: 3rem;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.contact-channel {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+}
+
+.contact-channel + .contact-channel {
+    border-left: 1px solid var(--line);
+}
+
+.contact-channel__name {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.contact-channel__value {
+    margin: 1rem 0 0;
+    color: var(--text);
+    font-size: clamp(1.5rem, 2vw, 2.2rem);
+    line-height: 1.15;
+    letter-spacing: -0.05em;
+    font-weight: 700;
+}
+
+.contact-channel__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.75rem;
+    color: var(--accent);
+    font-size: 0.76rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    transition: opacity 0.2s ease;
+}
+
+.contact-channel__cta:hover,
+.contact-channel__cta:focus-visible {
+    opacity: 0.8;
+}
+
 .product-page {
     padding-top: 2.5rem;
     padding-bottom: 4rem;
@@ -1351,6 +1463,27 @@ img {
 
     .catalog-product img {
         height: 420px;
+    }
+
+    .contact-page {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+
+    .contact-channels {
+        grid-template-columns: 1fr;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+    }
+
+    .contact-channel + .contact-channel {
+        border-left: none;
+        border-top: 1px solid var(--line);
+    }
+
+    .contact-channel {
+        min-height: auto;
+        padding: 1.5rem 0;
     }
 
     .product-content {

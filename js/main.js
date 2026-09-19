@@ -17,6 +17,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const contactPage = document.querySelector('.contact-page');
+    if (contactPage) {
+        const params = new URLSearchParams(window.location.search);
+        const productName = params.get('produto');
+        const productBlock = document.getElementById('contact-product');
+        const productNameNode = document.getElementById('contact-product-name');
+        const whatsappLink = document.getElementById('whatsapp-link');
+
+        const baseMessage = 'Olá! Vim pelo site da Rondy Lab e gostaria de mais informações.';
+        const buildMessage = (name) => {
+            const message = name
+                ? `Olá! Vim pelo site da Rondy Lab e tenho interesse no produto: ${name}.`
+                : baseMessage;
+            return encodeURIComponent(message);
+        };
+
+        if (productName && productBlock && productNameNode && whatsappLink) {
+            productBlock.hidden = false;
+            productNameNode.textContent = productName;
+            const nextMessage = buildMessage(productName);
+            whatsappLink.href = `https://wa.me/5511954963077?text=${nextMessage}`;
+        } else if (whatsappLink) {
+            whatsappLink.href = `https://wa.me/5511954963077?text=${encodeURIComponent(baseMessage)}`;
+        }
+    }
+
     const catalogPage = document.querySelector('.catalog-page');
     if (!catalogPage) return;
 
