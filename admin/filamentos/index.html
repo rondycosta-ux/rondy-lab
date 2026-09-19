@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filamentos | Rondy Lab Admin</title>
+    <meta name="description" content="Módulo de filamentos do admin da Rondy Lab.">
+    <link rel="stylesheet" href="../css/admin.css">
+    <script src="../js/admin.js" defer></script>
+    <script src="filamentos.js" defer></script>
+</head>
+<body>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar__top">
+                <a href="../" class="admin-brand" aria-label="Rondy Lab Admin - Dashboard">
+                    <img src="../../assets/images/logo.png" alt="Rondy Lab">
+                </a>
+                <p class="admin-sidebar__label">ADMIN</p>
+            </div>
+
+            <nav class="admin-nav" aria-label="Navegação administrativa">
+                <a class="admin-nav__item" href="../">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path><path d="M9 20v-7h6v7"></path></svg></span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="admin-nav__item" href="../calculadora/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6"></path><path d="M7 8h10"></path><path d="M7 12h10"></path><path d="M7 16h10"></path><path d="M5 20h14"></path></svg></span>
+                    <span>Calculadora</span>
+                </a>
+                <a class="admin-nav__item" href="../produtos/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 12 3l8 4.5-8 4.5-8-4.5Z"></path><path d="M4 12l8 4.5 8-4.5"></path><path d="M4 16.5 12 21l8-4.5"></path></svg></span>
+                    <span>Produtos</span>
+                </a>
+                <a class="admin-nav__item" href="../pedidos/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l3 5v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9l3-5Z"></path><path d="M8 4v6h8V4"></path><path d="M8 13h8"></path></svg></span>
+                    <span>Pedidos</span>
+                </a>
+                <a class="admin-nav__item" href="../estoque/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16"></path><path d="M6 8V5h12v3"></path><path d="M5 8v11h14V8"></path><path d="M9 12h6"></path></svg></span>
+                    <span>Estoque</span>
+                </a>
+                <a class="admin-nav__item is-active" href="./">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h8v5H8z"></path><path d="M8 10h8v9H8z"></path><path d="M5 15h3"></path><path d="M16 15h3"></path></svg></span>
+                    <span>Filamentos</span>
+                </a>
+                <a class="admin-nav__item" href="../consignacao/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"></path><path d="M7 18V8h10v10"></path><path d="M10 8V5h4v3"></path></svg></span>
+                    <span>Consignação</span>
+                </a>
+                <a class="admin-nav__item" href="../configuracoes/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.75 1.75 0 0 0 .35 1.92l.1.1a1.5 1.5 0 0 1-2.12 2.12l-.1-.1A1.75 1.75 0 0 0 15 19.4a1.75 1.75 0 0 0-1 .72 1.75 1.75 0 0 0-.18 1.06V21a1.5 1.5 0 0 1-3 0v-.15a1.75 1.75 0 0 0-.18-1.06A1.75 1.75 0 0 0 9 19.4a1.75 1.75 0 0 0-1.92.35l-.1.1a1.5 1.5 0 1 1-2.12-2.12l.1-.1A1.75 1.75 0 0 0 4.6 15a1.75 1.75 0 0 0-.72-1 1.75 1.75 0 0 0-1.06-.18H2.67a1.5 1.5 0 0 1 0-3h.15a1.75 1.75 0 0 0 1.06-.18A1.75 1.75 0 0 0 4.6 9a1.75 1.75 0 0 0-.35-1.92l-.1-.1a1.5 1.5 0 0 1 2.12-2.12l.1.1A1.75 1.75 0 0 0 9 4.6a1.75 1.75 0 0 0 1-.72 1.75 1.75 0 0 0 .18-1.06V2.67a1.5 1.5 0 0 1 3 0v.15a1.75 1.75 0 0 0 .18 1.06A1.75 1.75 0 0 0 15 4.6a1.75 1.75 0 0 0 1.92-.35l.1-.1a1.5 1.5 0 0 1 2.12 2.12l-.1.1A1.75 1.75 0 0 0 19.4 9c.3.3.72.44 1.13.35h.15a1.5 1.5 0 0 1 0 3h-.15a1.75 1.75 0 0 0-1.13.35A1.75 1.75 0 0 0 19.4 15Z"></path></svg></span>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="admin-main">
+            <header class="admin-header">
+                <button class="admin-mobile-toggle" type="button" aria-label="Abrir navegação administrativa" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+                <div>
+                    <p class="admin-header__eyebrow">FILAMENTOS</p>
+                    <h1 class="admin-header__title">ESTOQUE DE FILAMENTOS</h1>
+                    <p class="admin-header__subtitle">Controle os materiais disponíveis e seus custos de produção.</p>
+                </div>
+                <button id="open-filamento-form" type="button" class="admin-button admin-button--primary admin-button--header">+ CADASTRAR FILAMENTO</button>
+            </header>
+
+            <main class="admin-filamentos-page">
+                <section class="compact-indicators" aria-label="Indicadores de filamentos">
+                    <div class="compact-indicator">
+                        <span class="compact-indicator__label">ROLOS CADASTRADOS</span>
+                        <strong id="metric-total-rolos" class="compact-indicator__value">0</strong>
+                    </div>
+                    <div class="compact-indicator">
+                        <span class="compact-indicator__label">FILAMENTO DISPONÍVEL</span>
+                        <strong id="metric-total-disponivel" class="compact-indicator__value">0 g</strong>
+                    </div>
+                    <div class="compact-indicator">
+                        <span class="compact-indicator__label">ESTOQUE BAIXO</span>
+                        <strong id="metric-estoque-baixo" class="compact-indicator__value">0</strong>
+                    </div>
+                </section>
+
+                <section class="filamentos-toolbar" aria-label="Busca e filtro de filamentos">
+                    <div class="filamentos-toolbar__search">
+                        <label class="sr-only" for="filamento-search">Buscar filamento</label>
+                        <input id="filamento-search" type="search" placeholder="Buscar filamento...">
+                    </div>
+                    <div class="filamentos-toolbar__filter">
+                        <label class="sr-only" for="status-filter">Filtrar por status</label>
+                        <select id="status-filter">
+                            <option value="todos">TODOS</option>
+                            <option value="disponivel">DISPONÍVEIS</option>
+                            <option value="estoque-baixo">ESTOQUE BAIXO</option>
+                            <option value="esgotado">ESGOTADOS</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section class="filamento-form-panel is-hidden" id="filamento-form-panel" aria-live="polite">
+                    <form id="filamento-form">
+                        <div class="filamento-form__header">
+                            <h2 id="filamento-form-title">NOVO FILAMENTO</h2>
+                        </div>
+
+                        <div class="filamento-form__grid">
+                            <div class="config-field">
+                                <label for="filamento-material">Material</label>
+                                <select id="filamento-material" name="material">
+                                    <option value="PLA">PLA</option>
+                                    <option value="PETG">PETG</option>
+                                    <option value="ABS">ABS</option>
+                                    <option value="ASA">ASA</option>
+                                    <option value="TPU">TPU</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+
+                            <div class="config-field">
+                                <label for="filamento-marca">Marca</label>
+                                <input id="filamento-marca" name="marca" type="text" placeholder="Volt3D">
+                            </div>
+
+                            <div class="config-field">
+                                <label for="filamento-linha">Linha / acabamento</label>
+                                <input id="filamento-linha" name="linha" type="text" placeholder="Velvet, Silk, Basic, Matte">
+                            </div>
+
+                            <div class="config-field">
+                                <label for="filamento-cor">Cor</label>
+                                <input id="filamento-cor" name="cor" type="text" placeholder="Preto">
+                            </div>
+
+                            <div class="config-field">
+                                <label for="filamento-peso">Peso nominal do rolo</label>
+                                <div class="config-field__input-row">
+                                    <input id="filamento-peso" name="pesoNominal" type="number" step="1" min="1" inputmode="numeric" placeholder="1000">
+                                    <span class="config-field__unit">g</span>
+                                </div>
+                            </div>
+
+                            <div class="config-field">
+                                <label for="filamento-quantidade">Quantidade disponível</label>
+                                <div class="config-field__input-row">
+                                    <input id="filamento-quantidade" name="quantidadeDisponivel" type="number" step="1" min="0" inputmode="numeric" placeholder="1000">
+                                    <span class="config-field__unit">g</span>
+                                </div>
+                            </div>
+
+                            <div class="config-field">
+                                <label for="filamento-valor">Valor pago</label>
+                                <div class="config-field__input-row">
+                                    <span class="config-field__currency">R$</span>
+                                    <input id="filamento-valor" name="valorPago" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+                                </div>
+                            </div>
+
+                            <div class="config-field config-field--full">
+                                <label for="filamento-observacoes">Observações</label>
+                                <textarea id="filamento-observacoes" name="observacoes" rows="3" placeholder="Opcional"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="filamento-form__footer">
+                            <div id="filamento-form-message" class="admin-form-message" aria-live="polite"></div>
+                            <div class="filamento-form__actions">
+                                <button type="button" id="cancel-filamento-form" class="admin-button admin-button--ghost">CANCELAR</button>
+                                <button type="submit" class="admin-button admin-button--primary">SALVAR FILAMENTO</button>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="filamentos-table-wrap" aria-label="Lista de filamentos cadastrados">
+                    <div class="table-responsive">
+                        <table class="filamentos-table">
+                            <thead>
+                                <tr>
+                                    <th>MATERIAL</th>
+                                    <th>MARCA</th>
+                                    <th>LINHA</th>
+                                    <th>COR</th>
+                                    <th>SALDO</th>
+                                    <th>CUSTO/G</th>
+                                    <th>STATUS</th>
+                                    <th>AÇÕES</th>
+                                </tr>
+                            </thead>
+                            <tbody id="filamentos-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <aside id="movimentacoes-panel" class="movimentacoes-panel is-hidden" aria-live="polite">
+        <div class="movimentacoes-panel__header">
+            <div>
+                <p class="admin-header__eyebrow">MOVIMENTAÇÕES</p>
+                <h2 id="movimentacoes-title">Histórico do rolo</h2>
+            </div>
+            <button id="close-movimentacoes" type="button" class="admin-button admin-button--ghost">FECHAR</button>
+        </div>
+
+        <div id="movimentacoes-list" class="movimentacoes-list"></div>
+
+        <form id="movimentacao-form" class="movimentacao-form">
+            <h3>+ NOVA MOVIMENTAÇÃO</h3>
+
+            <div class="config-field">
+                <label for="movimento-tipo">Tipo</label>
+                <select id="movimento-tipo" name="tipo">
+                    <option value="ENTRADA">ENTRADA</option>
+                    <option value="CONSUMO">CONSUMO</option>
+                    <option value="AJUSTE">AJUSTE</option>
+                </select>
+            </div>
+
+            <div class="config-field movimentacao-quantity-field">
+                <label for="movimento-quantidade">Quantidade</label>
+                <div class="config-field__input-row">
+                    <input id="movimento-quantidade" name="quantidade" type="number" step="1" min="0" inputmode="numeric" placeholder="0">
+                    <span class="config-field__unit">g</span>
+                </div>
+            </div>
+
+            <div class="config-field movimentacao-adjust-field is-hidden">
+                <label for="movimento-saldo-ajuste">Saldo real do rolo</label>
+                <div class="config-field__input-row">
+                    <input id="movimento-saldo-ajuste" name="saldoAjuste" type="number" step="1" min="0" inputmode="numeric" placeholder="0">
+                    <span class="config-field__unit">g</span>
+                </div>
+            </div>
+
+            <div class="config-field">
+                <label for="movimento-observacao">Observação</label>
+                <textarea id="movimento-observacao" name="observacao" rows="3" placeholder="Opcional"></textarea>
+            </div>
+
+            <div id="movimento-form-message" class="admin-form-message" aria-live="polite"></div>
+            <button type="submit" class="admin-button admin-button--primary admin-button--full">REGISTRAR MOVIMENTAÇÃO</button>
+        </form>
+    </aside>
+</body>
+</html>

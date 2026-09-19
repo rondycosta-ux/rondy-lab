@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações | Rondy Lab Admin</title>
+    <meta name="description" content="Módulo de configurações do admin da Rondy Lab.">
+    <link rel="stylesheet" href="../css/admin.css">
+    <script src="../js/admin.js" defer></script>
+    <script src="configuracoes.js" defer></script>
+</head>
+<body>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar__top">
+                <a href="../" class="admin-brand" aria-label="Rondy Lab Admin - Dashboard">
+                    <img src="../../assets/images/logo.png" alt="Rondy Lab">
+                </a>
+                <p class="admin-sidebar__label">ADMIN</p>
+            </div>
+
+            <nav class="admin-nav" aria-label="Navegação administrativa">
+                <a class="admin-nav__item" href="../">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path><path d="M9 20v-7h6v7"></path></svg></span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="admin-nav__item" href="../calculadora/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6"></path><path d="M7 8h10"></path><path d="M7 12h10"></path><path d="M7 16h10"></path><path d="M5 20h14"></path></svg></span>
+                    <span>Calculadora</span>
+                </a>
+                <a class="admin-nav__item" href="../produtos/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 12 3l8 4.5-8 4.5-8-4.5Z"></path><path d="M4 12l8 4.5 8-4.5"></path><path d="M4 16.5 12 21l8-4.5"></path></svg></span>
+                    <span>Produtos</span>
+                </a>
+                <a class="admin-nav__item" href="../pedidos/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l3 5v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9l3-5Z"></path><path d="M8 4v6h8V4"></path><path d="M8 13h8"></path></svg></span>
+                    <span>Pedidos</span>
+                </a>
+                <a class="admin-nav__item" href="../estoque/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16"></path><path d="M6 8V5h12v3"></path><path d="M5 8v11h14V8"></path><path d="M9 12h6"></path></svg></span>
+                    <span>Estoque</span>
+                </a>
+                <a class="admin-nav__item" href="../filamentos/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h8v5H8z"></path><path d="M8 10h8v9H8z"></path><path d="M5 15h3"></path><path d="M16 15h3"></path></svg></span>
+                    <span>Filamentos</span>
+                </a>
+                <a class="admin-nav__item" href="../consignacao/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"></path><path d="M7 18V8h10v10"></path><path d="M10 8V5h4v3"></path></svg></span>
+                    <span>Consignação</span>
+                </a>
+                <a class="admin-nav__item is-active" href="./">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.75 1.75 0 0 0 .35 1.92l.1.1a1.5 1.5 0 0 1-2.12 2.12l-.1-.1A1.75 1.75 0 0 0 15 19.4a1.75 1.75 0 0 0-1 .72 1.75 1.75 0 0 0-.18 1.06V21a1.5 1.5 0 0 1-3 0v-.15a1.75 1.75 0 0 0-.18-1.06A1.75 1.75 0 0 0 9 19.4a1.75 1.75 0 0 0-1.92.35l-.1.1a1.5 1.5 0 1 1-2.12-2.12l.1-.1A1.75 1.75 0 0 0 4.6 15a1.75 1.75 0 0 0-.72-1 1.75 1.75 0 0 0-1.06-.18H2.67a1.5 1.5 0 0 1 0-3h.15a1.75 1.75 0 0 0 1.06-.18A1.75 1.75 0 0 0 4.6 9a1.75 1.75 0 0 0-.35-1.92l-.1-.1a1.5 1.5 0 0 1 2.12-2.12l.1.1A1.75 1.75 0 0 0 9 4.6a1.75 1.75 0 0 0 1-.72 1.75 1.75 0 0 0 .18-1.06V2.67a1.5 1.5 0 0 1 3 0v.15a1.75 1.75 0 0 0 .18 1.06A1.75 1.75 0 0 0 15 4.6a1.75 1.75 0 0 0 1.92-.35l.1-.1a1.5 1.5 0 0 1 2.12 2.12l-.1.1A1.75 1.75 0 0 0 19.4 9c.3.3.72.44 1.13.35h.15a1.5 1.5 0 0 1 0 3h-.15a1.75 1.75 0 0 0-1.13.35A1.75 1.75 0 0 0 19.4 15Z"></path></svg></span>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="admin-main">
+            <header class="admin-header">
+                <button class="admin-mobile-toggle" type="button" aria-label="Abrir navegação administrativa" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+                <div>
+                    <p class="admin-header__eyebrow">CONFIGURAÇÕES</p>
+                    <h1 class="admin-header__title">CUSTOS E PARÂMETROS</h1>
+                    <p class="admin-header__subtitle">Configure os valores utilizados nos cálculos de produção e precificação.</p>
+                </div>
+            </header>
+
+            <main class="admin-config-page">
+                <section class="config-section" aria-labelledby="energia-title">
+                    <div class="config-section__header">
+                        <h2 id="energia-title">ENERGIA ELÉTRICA</h2>
+                    </div>
+
+                    <div class="config-field">
+                        <label for="tarifa-energia">Tarifa de energia</label>
+                        <div class="config-field__input-row">
+                            <input id="tarifa-energia" name="tarifaEnergia" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+                            <span class="config-field__unit">R$/kWh</span>
+                        </div>
+                        <p class="config-field__description">Valor utilizado para calcular o custo de energia durante uma impressão.</p>
+                    </div>
+                </section>
+
+                <section class="config-section" aria-labelledby="impressoras-title">
+                    <div class="config-section__header config-section__header--with-button">
+                        <h2 id="impressoras-title">IMPRESSORAS</h2>
+                        <button id="toggle-printer-form" type="button" class="admin-button admin-button--primary">+ CADASTRAR IMPRESSORA</button>
+                    </div>
+
+                    <div id="printer-form-panel" class="printer-form-panel is-hidden" aria-live="polite">
+                        <form id="printer-form">
+                            <div class="config-grid">
+                                <div class="config-field">
+                                    <label for="printer-nome">Nome da impressora</label>
+                                    <input id="printer-nome" name="nome" type="text" placeholder="Bambu Lab A1 Mini">
+                                </div>
+
+                                <div class="config-field">
+                                    <label for="printer-valor">Valor pago</label>
+                                    <div class="config-field__input-row">
+                                        <span class="config-field__currency">R$</span>
+                                        <input id="printer-valor" name="valorPago" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+                                    </div>
+                                </div>
+
+                                <div class="config-field">
+                                    <label for="printer-vida">Vida útil considerada</label>
+                                    <div class="config-field__input-row">
+                                        <input id="printer-vida" name="vidaUtil" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+                                        <span class="config-field__unit">horas</span>
+                                    </div>
+                                </div>
+
+                                <div class="config-field">
+                                    <label for="printer-consumo">Consumo médio de energia</label>
+                                    <div class="config-field__input-row">
+                                        <input id="printer-consumo" name="consumoEnergia" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+                                        <span class="config-field__unit">W</span>
+                                    </div>
+                                </div>
+
+                                <div class="config-field">
+                                    <label for="printer-manutencao">Reserva de manutenção</label>
+                                    <div class="config-field__input-row">
+                                        <span class="config-field__currency">R$</span>
+                                        <input id="printer-manutencao" name="manutencao" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="printer-form__footer">
+                                <div id="printer-form-message" class="admin-form-message" aria-live="polite"></div>
+                                <div class="printer-form__actions">
+                                    <button type="button" id="cancel-printer-form" class="admin-button admin-button--ghost">CANCELAR</button>
+                                    <button type="submit" class="admin-button admin-button--primary">SALVAR IMPRESSORA</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="printer-list" class="printer-list" aria-live="polite"></div>
+                </section>
+
+                <section class="config-section" aria-labelledby="producao-title">
+                    <div class="config-section__header">
+                        <h2 id="producao-title">PRODUÇÃO</h2>
+                    </div>
+
+                    <div class="config-field">
+                        <label for="perda-padrao">Perda padrão</label>
+                        <div class="config-field__input-row">
+                            <input id="perda-padrao" name="perdaPadrao" type="number" step="0.01" min="0" max="100" inputmode="decimal" placeholder="0,00">
+                            <span class="config-field__unit">%</span>
+                        </div>
+                        <p class="config-field__description">Percentual adicional utilizado para considerar falhas de impressão, testes e desperdícios.</p>
+                    </div>
+                </section>
+
+                <section class="config-section" aria-labelledby="mao-obra-title">
+                    <div class="config-section__header">
+                        <h2 id="mao-obra-title">MÃO DE OBRA</h2>
+                    </div>
+
+                    <div class="config-field">
+                        <label for="mao-obra">Valor padrão da hora de trabalho</label>
+                        <div class="config-field__input-row">
+                            <span class="config-field__currency">R$</span>
+                            <input id="mao-obra" name="maoObra" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+                            <span class="config-field__unit">/hora</span>
+                        </div>
+                        <p class="config-field__description">Valor utilizado como referência para trabalhos manuais como preparação, acabamento, montagem e embalagem.</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

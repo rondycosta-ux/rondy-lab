@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora | Rondy Lab Admin</title>
+    <meta name="description" content="Módulo de calculadora do admin da Rondy Lab.">
+    <link rel="stylesheet" href="../css/admin.css">
+    <script src="../js/admin.js" defer></script>
+    <script src="calculadora.js" defer></script>
+</head>
+<body>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar__top">
+                <a href="../" class="admin-brand" aria-label="Rondy Lab Admin - Dashboard">
+                    <img src="../../assets/images/logo.png" alt="Rondy Lab">
+                </a>
+                <p class="admin-sidebar__label">ADMIN</p>
+            </div>
+
+            <nav class="admin-nav" aria-label="Navegação administrativa">
+                <a class="admin-nav__item" href="../">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path><path d="M9 20v-7h6v7"></path></svg></span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="admin-nav__item is-active" href="./">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6"></path><path d="M7 8h10"></path><path d="M7 12h10"></path><path d="M7 16h10"></path><path d="M5 20h14"></path></svg></span>
+                    <span>Calculadora</span>
+                </a>
+                <a class="admin-nav__item" href="../produtos/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 12 3l8 4.5-8 4.5-8-4.5Z"></path><path d="M4 12l8 4.5 8-4.5"></path><path d="M4 16.5 12 21l8-4.5"></path></svg></span>
+                    <span>Produtos</span>
+                </a>
+                <a class="admin-nav__item" href="../pedidos/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l3 5v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9l3-5Z"></path><path d="M8 4v6h8V4"></path><path d="M8 13h8"></path></svg></span>
+                    <span>Pedidos</span>
+                </a>
+                <a class="admin-nav__item" href="../estoque/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16"></path><path d="M6 8V5h12v3"></path><path d="M5 8v11h14V8"></path><path d="M9 12h6"></path></svg></span>
+                    <span>Estoque</span>
+                </a>
+                <a class="admin-nav__item" href="../filamentos/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h8v5H8z"></path><path d="M8 10h8v9H8z"></path><path d="M5 15h3"></path><path d="M16 15h3"></path></svg></span>
+                    <span>Filamentos</span>
+                </a>
+                <a class="admin-nav__item" href="../consignacao/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"></path><path d="M7 18V8h10v10"></path><path d="M10 8V5h4v3"></path></svg></span>
+                    <span>Consignação</span>
+                </a>
+                <a class="admin-nav__item" href="../configuracoes/">
+                    <span class="admin-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.75 1.75 0 0 0 .35 1.92l.1.1a1.5 1.5 0 0 1-2.12 2.12l-.1-.1A1.75 1.75 0 0 0 15 19.4a1.75 1.75 0 0 0-1 .72 1.75 1.75 0 0 0-.18 1.06V21a1.5 1.5 0 0 1-3 0v-.15a1.75 1.75 0 0 0-.18-1.06A1.75 1.75 0 0 0 9 19.4a1.75 1.75 0 0 0-1.92.35l-.1.1a1.5 1.5 0 1 1-2.12-2.12l.1-.1A1.75 1.75 0 0 0 4.6 15a1.75 1.75 0 0 0-.72-1 1.75 1.75 0 0 0-1.06-.18H2.67a1.5 1.5 0 0 1 0-3h.15a1.75 1.75 0 0 0 1.06-.18A1.75 1.75 0 0 0 4.6 9a1.75 1.75 0 0 0-.35-1.92l-.1-.1a1.5 1.5 0 0 1 2.12-2.12l.1.1A1.75 1.75 0 0 0 9 4.6a1.75 1.75 0 0 0 1-.72 1.75 1.75 0 0 0 .18-1.06V2.67a1.5 1.5 0 0 1 3 0v.15a1.75 1.75 0 0 0 .18 1.06A1.75 1.75 0 0 0 15 4.6a1.75 1.75 0 0 0 1.92-.35l.1-.1a1.5 1.5 0 0 1 2.12 2.12l-.1.1A1.75 1.75 0 0 0 19.4 9c.3.3.72.44 1.13.35h.15a1.5 1.5 0 0 1 0 3h-.15a1.75 1.75 0 0 0-1.13.35A1.75 1.75 0 0 0 19.4 15Z"></path></svg></span>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="admin-main">
+            <header class="admin-header">
+                <button class="admin-mobile-toggle" type="button" aria-label="Abrir navegação administrativa" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+                <div>
+                    <p class="admin-header__eyebrow">CALCULADORA</p>
+                    <h1 class="admin-header__title">PRECIFICAÇÃO</h1>
+                    <p class="admin-header__subtitle">Calcule o custo real de produção e defina o preço das suas peças.</p>
+                </div>
+            </header>
+
+            <main class="admin-calculadora-page">
+                <div class="calculator-layout">
+                    <section class="calculator-form-panel">
+                        <div class="calculator-section">
+                            <div class="calculator-section__header">
+                                <h2>PRODUÇÃO</h2>
+                            </div>
+
+                            <div class="calculator-grid">
+                                <div class="config-field config-field--full">
+                                    <label for="projeto-nome">Nome da peça/projeto</label>
+                                    <input id="projeto-nome" type="text" placeholder="Chaveiro Beagle">
+                                </div>
+
+                                <div class="config-field">
+                                    <label for="quantidade-producao">Quantidade produzida</label>
+                                    <input id="quantidade-producao" type="number" min="1" step="1" value="1">
+                                </div>
+
+                                <div class="config-field">
+                                    <label for="impressora-select">Impressora</label>
+                                    <select id="impressora-select"></select>
+                                </div>
+
+                                <div class="config-field">
+                                    <label>Tempo total de impressão</label>
+                                    <div class="time-inputs">
+                                        <div class="time-inputs__field">
+                                            <input id="tempo-horas" type="number" min="0" step="1" value="0">
+                                            <span>Horas</span>
+                                        </div>
+                                        <div class="time-inputs__field">
+                                            <input id="tempo-minutos" type="number" min="0" max="59" step="1" value="0">
+                                            <span>Minutos</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="calculator-section">
+                            <div class="calculator-section__header calculator-section__header--with-button">
+                                <h2>MATERIAL</h2>
+                                <button id="add-material-line" type="button" class="admin-button admin-button--primary">+ ADICIONAR FILAMENTO</button>
+                            </div>
+
+                            <div id="material-lines" class="material-lines"></div>
+                            <div id="material-warning" class="calculator-warning"></div>
+                        </div>
+
+                        <div class="calculator-section">
+                            <div class="calculator-section__header">
+                                <h2>FINALIDADE</h2>
+                            </div>
+
+                            <div class="purpose-options">
+                                <label class="purpose-option">
+                                    <input type="radio" name="finalidade" value="somente-custo" checked>
+                                    <span>SOMENTE CUSTO</span>
+                                </label>
+                                <label class="purpose-option">
+                                    <input type="radio" name="finalidade" value="venda">
+                                    <span>VENDA</span>
+                                </label>
+                                <label class="purpose-option">
+                                    <input type="radio" name="finalidade" value="consignacao">
+                                    <span>CONSIGNAÇÃO</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="calculator-section calculator-section--sales is-hidden" id="venda-panel">
+                            <div class="calculator-subsection">
+                                <h3>MARKUP SOBRE O CUSTO</h3>
+                                <div class="calculator-grid calculator-grid--compact">
+                                    <div class="config-field">
+                                        <label for="markup-percent">Markup desejado</label>
+                                        <div class="config-field__input-row">
+                                            <input id="markup-percent" type="number" min="0" step="0.01" value="0">
+                                            <span class="config-field__unit">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="calculator-subsection">
+                                <h3>PREÇO DE VENDA MANUAL</h3>
+                                <div class="calculator-grid calculator-grid--compact">
+                                    <div class="config-field">
+                                        <label for="preco-venda-manual">Preço de venda por unidade</label>
+                                        <div class="config-field__input-row">
+                                            <span class="config-field__currency">R$</span>
+                                            <input id="preco-venda-manual" type="number" min="0" step="0.01" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="calculator-section calculator-section--consignacao is-hidden" id="consignacao-panel">
+                            <div class="calculator-subsection">
+                                <h3>REPASSAR AO LOJISTA</h3>
+                                <div class="calculator-grid calculator-grid--compact">
+                                    <div class="config-field">
+                                        <label for="preco-consumidor">Preço de venda ao consumidor</label>
+                                        <div class="config-field__input-row">
+                                            <span class="config-field__currency">R$</span>
+                                            <input id="preco-consumidor" type="number" min="0" step="0.01" value="0">
+                                        </div>
+                                    </div>
+
+                                    <div class="config-field">
+                                        <label for="repasse-tipo">Tipo de repasse</label>
+                                        <select id="repasse-tipo">
+                                            <option value="percentual">PERCENTUAL</option>
+                                            <option value="fixo">VALOR FIXO</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="config-field">
+                                        <label for="repasse-valor">Valor do repasse</label>
+                                        <div class="config-field__input-row">
+                                            <input id="repasse-valor" type="number" min="0" step="0.01" value="0">
+                                            <span id="repasse-unit" class="config-field__unit">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="calculator-section">
+                            <div class="calculator-section__header">
+                                <h2>PERDAS</h2>
+                            </div>
+                            <div class="calculator-grid calculator-grid--compact">
+                                <div class="config-field">
+                                    <label for="percentual-perdas">Perdas</label>
+                                    <div class="config-field__input-row">
+                                        <input id="percentual-perdas" type="number" min="0" max="100" step="0.01" value="0">
+                                        <span class="config-field__unit">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="calculator-note">Reserva utilizada para considerar falhas de impressão, testes e desperdícios.</p>
+                        </div>
+
+                        <div class="calculator-section">
+                            <div class="calculator-section__header calculator-section__header--with-button">
+                                <h2>MÃO DE OBRA</h2>
+                                <label class="toggle-pill">
+                                    <input id="labor-toggle" type="checkbox">
+                                    <span>Adicionar mão de obra</span>
+                                </label>
+                            </div>
+
+                            <div id="labor-panel" class="labor-panel is-hidden">
+                                <div class="calculator-grid calculator-grid--compact">
+                                    <div class="config-field">
+                                        <label>Tempo de trabalho manual</label>
+                                        <div class="time-inputs">
+                                            <div class="time-inputs__field">
+                                                <input id="labor-horas" type="number" min="0" step="1" value="0">
+                                                <span>Horas</span>
+                                            </div>
+                                            <div class="time-inputs__field">
+                                                <input id="labor-minutos" type="number" min="0" max="59" step="1" value="0">
+                                                <span>Minutos</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="config-field">
+                                        <label for="labor-rate">Valor/hora</label>
+                                        <div class="config-field__input-row">
+                                            <span class="config-field__currency">R$</span>
+                                            <input id="labor-rate" type="number" min="0" step="0.01" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="calculator-note">Considere preparação, montagem, acabamento, pintura, embalagem ou outros trabalhos realizados manualmente.</p>
+                            </div>
+                        </div>
+
+                        <div class="calculator-actions">
+                            <button id="new-calculation" type="button" class="admin-button admin-button--ghost">NOVO CÁLCULO</button>
+                            <button id="save-price" type="button" class="admin-button admin-button--primary">SALVAR PRECIFICAÇÃO</button>
+                            <button id="create-order" type="button" class="admin-button admin-button--disabled" disabled>CRIAR PEDIDO</button>
+                        </div>
+
+                        <div id="calculator-message" class="admin-form-message" aria-live="polite"></div>
+                    </section>
+
+                    <aside class="calculator-summary sticky-summary">
+                        <div class="calculator-summary__header">
+                            <h2>RESUMO DO CUSTO</h2>
+                        </div>
+
+                        <div class="summary-list">
+                            <div class="summary-line"><span>Filamento</span><strong id="summary-material">R$ 0,00</strong></div>
+                            <div class="summary-line"><span>Energia</span><strong id="summary-energy">R$ 0,00</strong></div>
+                            <div class="summary-line"><span>Depreciação</span><strong id="summary-depreciation">R$ 0,00</strong></div>
+                            <div class="summary-line"><span>Manutenção</span><strong id="summary-maintenance">R$ 0,00</strong></div>
+                            <div class="summary-line"><span>Perdas</span><strong id="summary-losses">R$ 0,00</strong></div>
+                            <div class="summary-line"><span>Mão de obra</span><strong id="summary-labor">R$ 0,00</strong></div>
+                        </div>
+
+                        <div class="summary-divider"></div>
+
+                        <div class="summary-highlight">
+                            <span>CUSTO TOTAL</span>
+                            <strong id="summary-total-cost">R$ 0,00</strong>
+                        </div>
+
+                        <div class="summary-highlight summary-highlight--secondary">
+                            <span>CUSTO UNITÁRIO</span>
+                            <strong id="summary-unit-cost">R$ 0,00</strong>
+                        </div>
+
+                        <div id="sales-result" class="sales-result"></div>
+                    </aside>
+                </div>
+
+                <section class="calculator-details">
+                    <button id="toggle-details" type="button" class="admin-button admin-button--ghost">VER DETALHES DO CÁLCULO</button>
+                    <div id="details-panel" class="details-panel is-hidden"></div>
+                </section>
+
+                <section class="saved-pricings">
+                    <div class="saved-pricings__header">
+                        <h2>PRECIFICAÇÕES SALVAS</h2>
+                    </div>
+                    <div id="saved-pricing-list" class="saved-pricing-list"></div>
+                    <div id="saved-pricing-detail" class="saved-pricing-detail is-hidden"></div>
+                </section>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
