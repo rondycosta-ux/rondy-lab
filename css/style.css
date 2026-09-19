@@ -416,6 +416,85 @@ img {
     opacity: 0.8;
 }
 
+.custom-projects {
+    background: #141414;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 6rem 2rem;
+}
+
+.custom-projects__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    align-items: center;
+    gap: 2.5rem;
+}
+
+.custom-projects__content {
+    max-width: 560px;
+}
+
+.custom-projects__title {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(2.8rem, 5vw, 6rem);
+    line-height: 0.9;
+    letter-spacing: -0.07em;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.custom-projects__title--accent {
+    color: var(--accent);
+}
+
+.custom-projects__text {
+    margin: 1.5rem 0 0;
+    max-width: 530px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.12rem;
+    line-height: 1.7;
+}
+
+.custom-projects__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    padding: 1rem 1.75rem;
+    margin-top: 2rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    background: var(--accent);
+    border: 1px solid transparent;
+    color: var(--text);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.custom-projects__cta:hover,
+.custom-projects__cta:focus-visible {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.custom-projects__visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 420px;
+}
+
+.custom-projects__image {
+    width: min(100%, 560px);
+    max-height: 620px;
+    object-fit: contain;
+    display: block;
+}
+
 .line-card::before {
     content: "";
     position: absolute;
@@ -539,6 +618,103 @@ img {
     line-height: 1.05;
     letter-spacing: -0.05em;
     font-weight: 700;
+}
+
+.site-footer {
+    background: #111111;
+    border-top: 1px solid var(--line);
+    margin-top: 4rem;
+}
+
+.site-footer__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 2rem 3rem;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+}
+
+.brand--footer {
+    display: inline-flex;
+    align-items: center;
+}
+
+.brand--footer img {
+    width: 200px;
+    height: auto;
+}
+
+.site-footer__signature {
+    margin: 1rem 0 0;
+    color: var(--text);
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.site-footer__signature span {
+    color: var(--accent);
+}
+
+.site-footer__title {
+    margin: 0 0 1rem;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.site-footer__links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.site-footer__links a,
+.site-footer__cta {
+    color: var(--text);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.site-footer__links a:hover,
+.site-footer__links a:focus-visible,
+.site-footer__cta:hover,
+.site-footer__cta:focus-visible {
+    color: var(--accent);
+}
+
+.site-footer__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent);
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.site-footer__bottom {
+    border-top: 1px solid var(--line);
+}
+
+.site-footer__bottom-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 2.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.72rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
 }
 
 @media (max-width: 980px) {
@@ -668,6 +844,43 @@ img {
 
     .featured-product__image {
         height: 360px;
+    }
+
+    .custom-projects {
+        padding: 4rem 1.25rem;
+    }
+
+    .custom-projects__inner {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .custom-projects__content {
+        max-width: none;
+    }
+
+    .custom-projects__text {
+        max-width: none;
+        font-size: 1rem;
+    }
+
+    .custom-projects__visual {
+        min-height: auto;
+    }
+
+    .custom-projects__image {
+        width: min(100%, 360px);
+    }
+
+    .site-footer__inner {
+        grid-template-columns: 1fr;
+        padding: 3rem 1.25rem 2rem;
+    }
+
+    .site-footer__bottom-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1.2rem 1.25rem 1.75rem;
     }
 
     .page-shell {
