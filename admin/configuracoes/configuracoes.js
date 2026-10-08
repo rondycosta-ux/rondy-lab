@@ -1,13 +1,14 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!window.RondyAuth || !(await window.RondyAuth.ready)) return;
     const STORAGE_KEYS = {
         settings: 'rondyLabConfiguracoesGerais',
         printers: 'rondyLabConfiguracoesImpressoras'
     };
 
     const DEFAULT_SETTINGS = {
-        tarifaEnergia: 0.85,
-        perdaPadrao: 10,
-        maoObraPadrao: 45
+        tarifaEnergia: null,
+        perdaPadrao: null,
+        maoObraPadrao: null
     };
 
     const tarifaInput = document.getElementById('tarifa-energia');
@@ -51,7 +52,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function normalizaNumero(value) {
-        return Number(value.toString().replace(',', '.'));
+        if (value === '' || value === null || value === undefined) {
+            return null;
+        }
+
+        const parsed = Number(value.toString().replace(',', '.'));
+        return Number.isFinite(parsed) ? parsed : null;
     }
 
     function formatCurrency(value) {
@@ -73,9 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveSettings(settings) {
         writeStorage(STORAGE_KEYS.settings, {
-            tarifaEnergia: safeNumber(settings.tarifaEnergia, DEFAULT_SETTINGS.tarifaEnergia),
-            perdaPadrao: safeNumber(settings.perdaPadrao, DEFAULT_SETTINGS.perdaPadrao),
-            maoObraPadrao: safeNumber(settings.maoObraPadrao, DEFAULT_SETTINGS.maoObraPadrao)
+            tarifaEnergia: normalizaNumero(settings.tarifaEnergia),
+            perdaPadrao: normalizaNumero(settings.perdaPadrao),
+            maoObraPadrao: normalizaNumero(settings.maoObraPadrao)
         });
     }
 
@@ -90,9 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateSettingsFromInputs() {
         const settings = {
-            tarifaEnergia: normalizaNumero(tarifaInput.value || 0),
-            perdaPadrao: normalizaNumero(perdaInput.value || 0),
-            maoObraPadrao: normalizaNumero(maoObraInput.value || 0)
+            tarifaEnergia: normalizaNumero(tarifaInput.value),
+            perdaPadrao: normalizaNumero(perdaInput.value),
+            maoObraPadrao: normalizaNumero(maoObraInput.value)
         };
 
         saveSettings(settings);
@@ -104,23 +110,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateDepreciacaoHora(printer) {
-        const tarifa = getSettings().tarifaEnergia;
         const valorPago = safeNumber(printer.valorPago, 0);
         const vidaUtilHoras = safeNumber(printer.vidaUtilHoras, 0);
-        const consumoWatts = safeNumber(printer.consumoWatts, 0);
-        const manutencaoHora = safeNumber(printer.manutencaoHora, 0);
 
-        const depreciacao = vidaUtilHoras > 0 ? valorPago / vidaUtilHoras : 0;
-        const energiaHora = (consumoWatts / 1000) * tarifa;
-
-        return depreciacao + manutencaoHora + energiaHora;
+        return vidaUtilHoras > 0 ? valorPago / vidaUtilHoras : 0;
     }
 
     function renderSettings() {
         const settings = getSettings();
-        tarifaInput.value = settings.tarifaEnergia;
-        perdaInput.value = settings.perdaPadrao;
-        maoObraInput.value = settings.maoObraPadrao;
+        tarifaInput.value = settings.tarifaEnergia ?? '';
+        perdaInput.value = settings.perdaPadrao ?? '';
+        maoObraInput.value = settings.maoObraPadrao ?? '';
     }
 
     function renderPrinters() {

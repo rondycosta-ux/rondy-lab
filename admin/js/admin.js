@@ -1,4 +1,5 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!window.RondyAuth || !(await window.RondyAuth.ready)) return;
     const sidebar = document.querySelector('.admin-sidebar');
     const toggle = document.querySelector('.admin-mobile-toggle');
 

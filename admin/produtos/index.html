@@ -6,9 +6,20 @@
     <title>Produtos | Rondy Lab Admin</title>
     <meta name="description" content="Módulo de produtos do admin da Rondy Lab.">
     <link rel="stylesheet" href="/admin/css/admin.css">
+    <link rel="stylesheet" href="/admin/css/auth.css">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js" defer></script>
+    <script src="/admin/js/supabase-config.js" defer></script>
+    <script src="/admin/js/supabase-client.js" defer></script>
+    <script src="/admin/js/auth.js" defer></script>
     <script src="/admin/js/admin.js" defer></script>
 </head>
-<body>
+<body data-auth-page="protected">
+    <section class="auth-gate" aria-label="Verificação de acesso">
+        <p id="auth-status" class="admin-form-message" role="status">Verificando acesso… Se esta mensagem persistir, confira a conexão e recarregue a página.</p>
+        <a class="admin-button" href="/admin/login/">IR PARA LOGIN</a>
+    </section>
+    <noscript><p>Ative o JavaScript para acessar o Admin.</p></noscript>
     <div class="admin-shell">
         <aside class="admin-sidebar">
             <div class="admin-sidebar__top">

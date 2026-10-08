@@ -1,4 +1,5 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!window.RondyAuth || !(await window.RondyAuth.ready)) return;
     const STORAGE_KEYS = {
         settings: 'rondyLabConfiguracoesGerais',
         printers: 'rondyLabConfiguracoesImpressoras',
@@ -7,9 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const DEFAULT_SETTINGS = {
-        tarifaEnergia: 0.85,
-        perdaPadrao: 10,
-        maoObraPadrao: 45
+        tarifaEnergia: null,
+        perdaPadrao: null,
+        maoObraPadrao: null
     };
 
     const impressoraSelect = document.getElementById('impressora-select');
@@ -141,17 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateDepreciacaoHora(printer) {
-        const settings = getSettings();
-        const tarifa = safeNumber(settings.tarifaEnergia, DEFAULT_SETTINGS.tarifaEnergia);
         const valorPago = safeNumber(printer?.valorPago, 0);
         const vidaUtilHoras = safeNumber(printer?.vidaUtilHoras, 0);
-        const consumoWatts = safeNumber(printer?.consumoWatts, 0);
-        const manutencaoHora = safeNumber(printer?.manutencaoHora, 0);
 
-        const depreciacao = vidaUtilHoras > 0 ? valorPago / vidaUtilHoras : 0;
-        const energiaHora = (consumoWatts / 1000) * tarifa;
-
-        return depreciacao + manutencaoHora + energiaHora;
+        return vidaUtilHoras > 0 ? valorPago / vidaUtilHoras : 0;
     }
 
     function getMaterialLines() {
@@ -300,19 +294,41 @@ document.addEventListener('DOMContentLoaded', () => {
             salesResult.innerHTML = `
                 <div class="sales-result__row"><span>Sem finalidade ativa</span><strong>${toCurrency(totalCost)}</strong></div>
             `;
-            return;
+            return {
+                purpose,
+                salePricePerUnit: null,
+                salePriceTotal: null,
+                profit: null,
+                marginPercent: null,
+                consumerPrice: null,
+                repasse: null,
+                netRevenuePerUnit: null,
+                netRevenueTotal: null
+            };
         }
 
         if (purpose === 'venda') {
             const salePrice = manualPrice > 0 ? manualPrice : totalCost * (1 + markup / 100);
             const priceTotal = salePrice * quantity;
+            const profit = priceTotal - totalCost;
+            const marginPercent = priceTotal > 0 ? (profit / priceTotal) * 100 : 0;
 
             salesResult.innerHTML = `
                 <div class="sales-result__row"><span>Preço por unidade</span><strong>${toCurrency(salePrice)}</strong></div>
                 <div class="sales-result__row"><span>Preço total</span><strong>${toCurrency(priceTotal)}</strong></div>
                 <div class="sales-result__row"><span>Margem líquida</span><strong>${toCurrency((salePrice - unitCost) * quantity)}</strong></div>
             `;
-            return;
+            return {
+                purpose,
+                salePricePerUnit: salePrice,
+                salePriceTotal: priceTotal,
+                profit,
+                marginPercent,
+                consumerPrice: null,
+                repasse: null,
+                netRevenuePerUnit: null,
+                netRevenueTotal: null
+            };
         }
 
         const repasse = repasseTipo.value === 'fixo'
@@ -320,12 +336,27 @@ document.addEventListener('DOMContentLoaded', () => {
             : consumerPrice * (repasseValue / 100);
 
         const receiveValue = Math.max(consumerPrice - repasse, 0);
+        const netRevenueTotal = receiveValue * quantity;
+        const profit = netRevenueTotal - totalCost;
+        const marginPercent = netRevenueTotal > 0 ? (profit / netRevenueTotal) * 100 : 0;
 
         salesResult.innerHTML = `
             <div class="sales-result__row"><span>Preço ao consumidor</span><strong>${toCurrency(consumerPrice)}</strong></div>
             <div class="sales-result__row"><span>Repasse</span><strong>${toCurrency(repasse)}</strong></div>
             <div class="sales-result__row"><span>Receita líquida</span><strong>${toCurrency(receiveValue)}</strong></div>
         `;
+
+        return {
+            purpose,
+            salePricePerUnit: consumerPrice,
+            salePriceTotal: consumerPrice * quantity,
+            profit,
+            marginPercent,
+            consumerPrice,
+            repasse,
+            netRevenuePerUnit: receiveValue,
+            netRevenueTotal
+        };
     }
 
     function getTotalMaterialCost() {
@@ -364,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const quantity = safeNumber(quantidadeProducao.value, 1);
         const materialCost = getTotalMaterialCost();
         const energyCost = printer
-            ? (safeNumber(printer.consumoWatts, 0) / 1000) * safeNumber(settings.tarifaEnergia, DEFAULT_SETTINGS.tarifaEnergia) * totalRuntimeHours
+            ? (safeNumber(printer.consumoWatts, 0) / 1000) * safeNumber(settings.tarifaEnergia, 0) * totalRuntimeHours
             : 0;
         const depreciationHour = printer ? calculateDepreciacaoHora(printer) : 0;
         const depreciationCost = depreciationHour * totalRuntimeHours;
@@ -388,8 +419,8 @@ document.addEventListener('DOMContentLoaded', () => {
         summaryTotalCost.textContent = toCurrency(totalCost);
         summaryUnitCost.textContent = toCurrency(unitCost);
 
-        buildSalesResult(totalCost, unitCost);
-        renderDetails({
+        const sales = buildSalesResult(totalCost, unitCost);
+        const calculation = {
             materialCost,
             energyCost,
             depreciationCost,
@@ -402,8 +433,16 @@ document.addEventListener('DOMContentLoaded', () => {
             runtime: totalRuntimeHours,
             laborHours,
             printer,
-            subtotalBeforeLosses
-        });
+            subtotalBeforeLosses,
+            percentualPerdas: percentualPerdasValue,
+            laborActive,
+            laborRate: laborActive ? safeNumber(laborRate.value, 0) : 0,
+            energyTariff: safeNumber(settings.tarifaEnergia, 0),
+            sales
+        };
+
+        renderDetails(calculation);
+        return calculation;
     }
 
     function renderDetails(details) {
@@ -486,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
         quantidadeProducao.value = '1';
         tempoHoras.value = '0';
         tempoMinutos.value = '0';
-        percentualPerdas.value = String(getSettings().perdaPadrao || 0);
+        percentualPerdas.value = getSettings().perdaPadrao ?? '';
         markupPercent.value = '0';
         precoVendaManual.value = '0';
         precoConsumidor.value = '0';
@@ -496,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         laborPanel.classList.add('is-hidden');
         laborHoras.value = '0';
         laborMinutos.value = '0';
-        laborRate.value = String(getSettings().maoObraPadrao || 0);
+        laborRate.value = getSettings().maoObraPadrao ?? '';
         materialLinesContainer.innerHTML = '';
         addMaterialLine();
         setMessage('');
@@ -548,24 +587,35 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const calculation = updateSummary();
+        const printer = calculation.printer;
+        const material = getMaterialLines().map((line) => {
+            const filament = getFilamentoById(line.querySelector('.material-line__filamento').value);
+            const grams = safeNumber(line.querySelector('.material-line__grams').value, 0);
+            const costPerGram = calculateCustoPorGrama(filament);
+
+            return {
+                filamentId: filament?.id || null,
+                identificacao: filament
+                    ? `${filament.material} • ${filament.marca} • ${filament.linha || 'Sem linha'} • ${filament.cor}`
+                    : 'Filamento não selecionado',
+                nome: filament ? `${filament.material} • ${filament.marca} • ${filament.cor}` : 'Filamento não selecionado',
+                grams,
+                costPerGram,
+                materialCost: grams * costPerGram
+            };
+        });
+
         const pricing = {
             id: uniqueId('precificacao'),
             nome: projetoNome.value.trim(),
             data: new Date().toISOString(),
-            quantidade: safeNumber(quantidadeProducao.value, 1),
-            tipo: document.querySelector('input[name="finalidade"]:checked')?.value || 'somente-custo',
-            impressora: getPrinterById(impressoraSelect.value)?.nome || 'Sem impressora',
-            totalCost: Number(summaryTotalCost.textContent.replace(/[R$\s.]/g, '').replace(',', '.')) || 0,
-            unitCost: Number(summaryUnitCost.textContent.replace(/[R$\s.]/g, '').replace(',', '.')) || 0,
-            material: getMaterialLines().map((line) => {
-                const filament = getFilamentoById(line.querySelector('.material-line__filamento').value);
-                const grams = safeNumber(line.querySelector('.material-line__grams').value, 0);
-                return {
-                    filamentId: filament?.id || null,
-                    nome: filament ? `${filament.material} • ${filament.marca} • ${filament.cor}` : 'Filamento não selecionado',
-                    grams
-                };
-            }),
+            quantidade: calculation.quantity,
+            tipo: calculation.sales.purpose,
+            impressora: printer?.nome || 'Sem impressora',
+            totalCost: calculation.totalCost,
+            unitCost: calculation.unitCost,
+            material,
             detalhes: {
                 markup: safeNumber(markupPercent.value, 0),
                 precoManual: safeNumber(precoVendaManual.value, 0),
@@ -574,6 +624,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 repasseValor: safeNumber(repasseValor.value, 0),
                 perdas: safeNumber(percentualPerdas.value, 0),
                 maoObra: laborToggle.checked ? safeNumber(laborRate.value, 0) : 0
+            },
+            snapshot: {
+                versao: 2,
+                salvoEm: new Date().toISOString(),
+                impressora: {
+                    id: printer?.id || null,
+                    nome: printer?.nome || 'Sem impressora',
+                    valorPago: safeNumber(printer?.valorPago, 0),
+                    vidaUtilHoras: safeNumber(printer?.vidaUtilHoras, 0),
+                    consumoWatts: safeNumber(printer?.consumoWatts, 0),
+                    manutencaoHora: safeNumber(printer?.manutencaoHora, 0),
+                    depreciacaoHora: printer ? calculateDepreciacaoHora(printer) : 0
+                },
+                tarifaEnergia: calculation.energyTariff,
+                impressao: {
+                    horas: safeNumber(tempoHoras.value, 0),
+                    minutos: safeNumber(tempoMinutos.value, 0),
+                    duracaoHoras: calculation.runtime
+                },
+                quantidadeProduzida: calculation.quantity,
+                filamentos: material,
+                custos: {
+                    material: calculation.materialCost,
+                    energia: calculation.energyCost,
+                    depreciacao: calculation.depreciationCost,
+                    manutencao: calculation.maintenanceCost,
+                    diretos: calculation.subtotalBeforeLosses,
+                    perdas: {
+                        percentual: calculation.percentualPerdas,
+                        valor: calculation.lossesCost
+                    },
+                    maoDeObra: {
+                        ativa: calculation.laborActive,
+                        horas: calculation.laborHours,
+                        valorHora: calculation.laborRate,
+                        valor: calculation.laborValue
+                    },
+                    total: calculation.totalCost,
+                    unitario: calculation.unitCost
+                },
+                finalidade: calculation.sales.purpose,
+                venda: {
+                    markupPercentual: safeNumber(markupPercent.value, 0),
+                    precoManual: safeNumber(precoVendaManual.value, 0),
+                    precoVendaUnitario: calculation.sales.salePricePerUnit,
+                    precoVendaTotal: calculation.sales.salePriceTotal,
+                    lucro: calculation.sales.profit,
+                    margemPercentual: calculation.sales.marginPercent
+                },
+                consignacao: {
+                    precoConsumidor: safeNumber(precoConsumidor.value, 0),
+                    repasseTipo: repasseTipo.value,
+                    repasseValor: safeNumber(repasseValor.value, 0),
+                    repasseCalculado: calculation.sales.repasse,
+                    receitaLiquidaUnitario: calculation.sales.netRevenuePerUnit,
+                    receitaLiquidaTotal: calculation.sales.netRevenueTotal
+                }
             }
         };
 

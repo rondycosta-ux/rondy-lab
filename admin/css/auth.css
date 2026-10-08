@@ -1,0 +1,37 @@
+/* O conteúdo administrativo só aparece após getUser() confirmar a sessão. */
+html:not(.auth-ready) body[data-auth-page="protected"] > :not(.auth-gate):not(noscript):not(script) {
+    display: none !important;
+}
+.auth-ready .auth-gate { display: none; }
+.auth-gate, .login-page {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 4rem 1.25rem;
+}
+.login-page .admin-brand { margin-bottom: 2.5rem; }
+.login-page h1 {
+    font-size: clamp(2.2rem, 5vw, 3.3rem);
+    letter-spacing: -0.06em;
+    margin: 0.75rem 0 1rem;
+}
+.login-page form { margin-top: 2rem; }
+.login-page .config-field { margin-bottom: 1.4rem; }
+.login-page .admin-button { width: 100%; }
+.login-description { color: var(--admin-text-soft); line-height: 1.7; }
+.auth-gate p, .login-page .admin-form-message { overflow-wrap: anywhere; }
+.admin-session { padding: 1rem 1.4rem; margin-top: auto; }
+.admin-sidebar { overflow-y: auto; }
+.admin-session .admin-button { width: 100%; }
+.admin-session p { margin: 0.5rem 0 0; }
+.login-page .config-field__input-row:focus-within {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: 3px;
+}
+.login-page button:focus-visible, .admin-session button:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: 3px;
+}
+.login-page button:disabled, .admin-session button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
