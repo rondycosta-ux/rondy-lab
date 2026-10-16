@@ -1,6 +1,6 @@
 # Rondy Lab — Modelo de dados
 
-> Atualização — integração inicial com Supabase Auth: o Admin agora possui login por e-mail/senha, verificação de sessão e logout. Os dados operacionais continuam nas cinco chaves locais, sem migração. As afirmações abaixo sobre ausência de autenticação descrevem o levantamento anterior. Consulte `docs/SUPABASE-AUTH.md` para o estado atual e os limites desta etapa. As tabelas remotas existentes e suas políticas não foram alteradas nem auditadas nesta integração.
+> Atualização — o Admin possui autenticação Supabase. Filamentos consulta dados próprios e cadastra novos rolos no Supabase via RPC; outras escritas do módulo permanecem bloqueadas. A migration `003_user_roles.sql` prepara `public.user_roles`, mas ainda não foi aplicada e não altera o acesso atual. Os demais módulos continuam usando suas persistências locais. Consulte `docs/SUPABASE-AUTH.md` para bootstrap manual e limites.
 
 Referência técnica da implementação consultada em 7 de outubro de 2026. A fonte dos schemas é o JavaScript atual da árvore de trabalho, inclusive alterações locais já existentes. Nenhum dado real de navegador foi lido ou modificado. Descrever uma estrutura ou risco não significa aprovar mudanças de schema.
 
@@ -19,11 +19,17 @@ Fontes de código:
 
 O Admin serializa objetos e arrays com `JSON.stringify()` e os lê com `JSON.parse()` no `localStorage`. O armazenamento é local ao perfil de navegador e à origem (protocolo, domínio e porta). Live Server e produção podem apresentar bases distintas. Abas da mesma origem compartilham armazenamento, mas não há sincronização reativa implementada na interface nem sincronização entre dispositivos.
 
-É uma solução temporária da fase atual. Não há banco remoto, API própria, autenticação, permissões por usuário, backup pela interface ou transações entre chaves. Cada gravação substitui integralmente o valor da chave; não há atualização parcial de registros no mecanismo de armazenamento.
+O `localStorage` continua sendo a persistência dos módulos ainda não integrados. Filamentos é a exceção: leitura e cadastro usam o cliente Supabase existente, sessão autenticada e RLS; o cadastro cria o rolo e a ENTRADA inicial na mesma RPC. As chaves locais legadas de filamentos permanecem intactas e ainda podem ser consultadas pela Calculadora; não há importação automática nem fallback do módulo Filamentos para esses dados. Cada gravação local substitui integralmente o valor da chave; não há atualização parcial de registros nesse mecanismo.
 
-Os schemas abaixo descrevem o que os fluxos atuais gravam. Não são validadores executáveis nem garantia sobre registros antigos ou alterados manualmente. `number` representa número JSON/JavaScript, sem tipo decimal monetário específico. Datas são strings ISO produzidas por `new Date().toISOString()`, não objetos Date persistidos. Os horários dependem do relógio local do dispositivo.
+Os schemas locais abaixo descrevem os fluxos ainda locais ou formatos legados preservados. Não são validadores executáveis nem garantia sobre registros antigos ou alterados manualmente. `number` representa número JSON/JavaScript, sem tipo decimal monetário específico. Datas locais são strings ISO produzidas por `new Date().toISOString()`, não objetos Date persistidos. Os horários dependem do relógio local do dispositivo.
 
 Compatibilidade com registros anteriores deve ser preservada. Somente snapshots têm versão explícita atualmente; não existe envelope geral versionado para as coleções.
+
+## 1.1. Papéis Supabase preparados
+
+A migration `supabase/migrations/003_user_roles.sql` cria `public.user_roles` com `user_id uuid` como chave primária e FK para `auth.users(id)`, `role` restrito a `admin` ou `user` e `created_at timestamptz`. A tabela habilita RLS: usuários autenticados podem ler somente a própria linha; `anon` não tem acesso e `authenticated` não recebe privilégios de escrita. Não há gatilho de criação nem papel padrão; a migration não cadastra nem promove contas. O proprietário define os papéis manualmente no SQL Editor, conforme `docs/SUPABASE-AUTH.md`.
+
+Os papéis são somente cadastro nesta etapa: o frontend não os consulta e nenhuma política atual concede acesso administrativo a dados de outras contas. A migration não altera tabelas ou políticas de Filamentos e Movimentações. Usuários autenticados mantêm o comportamento atual de acesso aos módulos.
 
 ## 2. Inventário completo de chaves
 
@@ -35,8 +41,8 @@ Abreviações de arquivos nesta tabela: **Configurações** = `admin/configuraco
 | --- | --- | --- | --- | --- | --- |
 | `rondyLabConfiguracoesGerais` | Objeto; parâmetros gerais | Configurações e Calculadora | Configurações, via `saveSettings()` | Objeto com três propriedades `null` | JSON inválido retorna padrão; objeto lido é combinado com padrão, sem validar tipo ou campos |
 | `rondyLabConfiguracoesImpressoras` | Array de impressoras | Configurações e Calculadora | Configurações, via `savePrinters()` | `[]` | JSON inválido, `null` ou valor que não é array resulta em `[]`; elementos não são validados |
-| `rondyLabFilamentos` | Array de rolos | Filamentos e Calculadora | Filamentos, via `saveFilamentos()` | `[]` | Mesmo tratamento de array; sem validação completa dos elementos |
-| `rondyLabFilamentosMovimentacoes` | Array de movimentos de rolos | Filamentos | Filamentos, via `saveMovimentacoes()` | `[]` | Mesmo tratamento de array; sem validação dos vínculos, tipos ou datas na leitura |
+| `rondyLabFilamentos` | Array legado de rolos | Calculadora; preservado para futura importação explícita | Nenhum pelo módulo Filamentos após a integração de leitura | `[]` legado | Não lido nem alterado pelo módulo Filamentos |
+| `rondyLabFilamentosMovimentacoes` | Array legado de movimentos | Preservado para futura importação explícita | Nenhum pelo módulo Filamentos após a integração de leitura | `[]` legado | Não lido nem alterado pelo módulo Filamentos |
 | `rondyLabPrecificacoesSalvas` | Array de registros históricos | Calculadora | Calculadora, via `saveSavedPricings()` | `[]` | Mesmo tratamento de array; sem validação de versão ou consistência entre resumo e snapshot |
 
 Nos três scripts, `readStorage()` usa `getItem`, retorna fallback se não houver texto ou se o JSON for `null`, e captura falha de acesso/parse com `console.warn`. Ler um fallback não grava automaticamente a chave. Arrays com itens malformados passam por `Array.isArray` e podem causar exceções nas renderizações posteriores, fora do `try/catch` de leitura.
@@ -92,7 +98,7 @@ A Calculadora consulta o registro atual por ID; edição afeta novas simulaçõe
 
 ## 5. Filamentos
 
-Chave: `rondyLabFilamentos`; array de rolos individuais. Marca/material/cor iguais não unificam registros.
+Schema legado preservado na chave `rondyLabFilamentos`; array local de rolos individuais, não lido nem alterado pelo módulo Filamentos após a integração remota. Marca/material/cor iguais não unificam registros. A interface consulta `public.filamentos` no Supabase, mapeia `snake_case` para os nomes camelCase acima e exibe somente linhas com `arquivado = false`. A consulta usa a sessão Supabase existente, filtra pelo usuário autenticado e permanece protegida pelas políticas RLS. Novos cadastros são feitos exclusivamente pela RPC `cadastrar_filamento_com_entrada`, nunca por INSERT direto do frontend.
 
 | Campo | Tipo gravado | Significado / validação de cadastro e edição |
 | --- | --- | --- |
@@ -121,13 +127,11 @@ demais casos                                   → DISPONÍVEL
 
 O custo usa peso nominal, não o saldo restante. Para dados inválidos, a função de status usa `safeNumber(pesoNominal, 1)` e define a razão como zero se o peso resultante não for positivo. O limiar de 20% é constante atual, não configuração do usuário. Status, custo/g e indicadores são recalculados na leitura/renderização.
 
-Cadastrar grava uma ENTRADA inicial e o rolo em operações separadas. Editar mantém ID e criação via spread, atualiza `atualizadoEm` e permite alterar saldo sem movimentação. A atribuição do saldo usa `Math.min` após validar saldo ≤ peso nominal.
-
-Excluir solicita confirmação, remove o rolo e depois filtra todos os movimentos com seu `filamentoId`. Não verifica precificações. Estas mantêm referências e cópias antigas. A Calculadora consulta custo e saldo atuais por ID, sem gravar nesta chave; pode usar o mesmo rolo em várias linhas. Alertas de saldo são por linha, não agregados por ID.
+Os campos da tabela descrevem o formato local legado para compatibilidade e futura importação explícita; o módulo não consulta nem grava essa chave. O formulário permite cadastrar enviando os dez parâmetros nomeados definidos pela RPC: IDs do filamento e do movimento, material, marca, linha, cor, peso nominal, saldo, valor pago e observações. A RPC associa o usuário pela sessão e grava filamento e ENTRADA inicial atomicamente. IDs usam `crypto.randomUUID()` ou `crypto.getRandomValues()`, com prefixos `filamento-` e `mov-`. Uma tentativa incerta conserva IDs e payload em memória, verifica ambos os registros pelo usuário autenticado e só repete com os mesmos IDs; conflitos bloqueiam a ação. Edição e exclusão continuam desabilitadas. Sem registros remotos, a lista ativa pode aparecer vazia mesmo quando há dados locais preservados. A Calculadora ainda usa o armazenamento local conforme sua implementação atual.
 
 ## 6. Movimentações de filamentos
 
-Chave: `rondyLabFilamentosMovimentacoes`; array global de movimentos, filtrado por rolo na interface.
+Schema legado preservado na chave `rondyLabFilamentosMovimentacoes`; array local global de movimentos, não lido nem alterado pelo módulo Filamentos. O painel de histórico consulta `public.filamentos_movimentacoes` para o filamento selecionado, ordenado por `data_hora` decrescente, usando a sessão autenticada e RLS. A ENTRADA inicial só é criada junto ao cadastro via RPC; movimentações posteriores estão temporariamente desabilitadas.
 
 | Campo | Tipo gravado | Semântica |
 | --- | --- | --- |
@@ -146,11 +150,11 @@ Chave: `rondyLabFilamentosMovimentacoes`; array global de movimentos, filtrado p
 
 A ENTRADA automática do cadastro inicial pode ter quantidade zero; não passa pelo validador do formulário de movimentação. Sua observação é `Cadastro inicial do rolo.`. AJUSTE vazio é convertido em zero e aceito. ENTRADA/AJUSTE não limitam saldo ao peso nominal. O fluxo rejeita saldo final negativo e exige encontrar o filamento selecionado antes de prosseguir.
 
-Ordem de gravação manual: acrescentar e salvar movimento; reler rolos; atualizar saldo e `atualizadoEm`; salvar rolos. Cadastro inicial também salva movimento antes da coleção de rolos. Não há transação nem rollback.
+As regras acima descrevem o formato e a semântica dos registros locais legados. Na interface atual, apenas o cadastro inicial grava ENTRADA, atomicamente com o rolo, pela RPC; as movimentações posteriores permanecem desabilitadas.
 
 O saldo utilizado é `quantidadeDisponivel` do cadastro; não há recomposição automática pelo histórico. Somar `quantidade` de todos os movimentos é incorreto: CONSUMO subtrai e AJUSTE substitui. O schema não guarda saldo anterior, diferença do ajuste, operador, motivo obrigatório ou referência de produção/pedido.
 
-Movimentos são exibidos em ordem decrescente de data, sem edição/exclusão individual. Excluir rolo elimina seus movimentos. Edição direta de saldo não deixa evento. A apresentação de CONSUMO pode prefixar `+` por armazenar quantidade positiva, embora o saldo seja subtraído; o tipo continua sendo a fonte de interpretação.
+Movimentos são exibidos em ordem decrescente de data; ENTRADA aparece positiva, CONSUMO negativa e AJUSTE como saldo final absoluto. Não há edição ou exclusão individual na interface.
 
 ## 7. Precificações salvas
 

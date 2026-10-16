@@ -10,7 +10,7 @@ O SDK `@supabase/supabase-js` UMD, versão fixa `2.57.4`, é carregado por jsDel
 
 - `/admin/login/` permite entrar por e-mail/senha com `signInWithPassword`. Não oferece cadastro, recuperação de senha ou OAuth nesta etapa. A senha não é registrada em logs, URL ou armazenamento pela aplicação; o campo é limpo após a tentativa.
 - Nas páginas privadas, o CSS oculta o conteúdo até `auth.getUser()` confirmar um usuário não anônimo. Sem sessão válida, redireciona ao login. Falha de configuração mantém o conteúdo oculto e informa o problema.
-- Os inicializadores dos módulos aguardam `RondyAuth.ready` antes de consultar ou renderizar dados locais. O corpo dos cálculos e as operações de persistência anteriores não foram alterados.
+- Os inicializadores dos módulos aguardam `RondyAuth.ready` antes de inicializar. Filamentos consulta os dados remotos do usuário autenticado; os demais módulos ainda usam suas persistências locais.
 - O SDK persiste e renova a sessão. Eventos de logout em outra aba fecham o Admin. Ao retornar à aba ou restaurar a página pelo histórico, a sessão é conferida novamente. Destinos de login/logout são fixos e internos, sem parâmetro de redirecionamento externo.
 - O botão Sair fica na sidebar de todas as páginas protegidas; usa `signOut({ scope: 'local' })`, encerrando a sessão atual, não todas as sessões em outros dispositivos. Falha de logout é informada e permite tentar novamente.
 
@@ -20,11 +20,34 @@ Para uma nova página administrativa, repetir o carregamento e o atributo `data-
 
 ## Persistência e limites
 
-As cinco chaves `rondyLab...` permanecem intactas. O SDK usa sua chave padrão de sessão `sb-<project-ref>-auth-token` em localStorage e pode administrar chaves auxiliares de seu próprio fluxo. Não há `localStorage.clear()`, migração, leitura/escrita de tabelas ou mudanças nas políticas RLS.
+As chaves operacionais `rondyLab...` permanecem intactas. O SDK usa sua chave padrão de sessão `sb-<project-ref>-auth-token` em localStorage e pode administrar chaves auxiliares de seu próprio fluxo. O login/logout não limpa as chaves operacionais. Filamentos já lê e cadastra dados no Supabase com a sessão; os demais dados operacionais permanecem locais. A migration de papéis descrita abaixo ainda não foi aplicada e não altera dados ou políticas existentes.
 
 Os dados operacionais locais **não pertencem a um usuário autenticado específico**: contas diferentes no mesmo navegador/origem ainda veem a mesma base local. Login não cifra nem isola esses dados. Não usar esta etapa como solução multiusuário para a base local. O isolamento por `user_id` só se aplica às futuras operações remotas protegidas por RLS.
 
-O HTML e JavaScript continuam sendo arquivos públicos da hospedagem estática. O guard é uma proteção de navegação/interface, não autorização de banco. A autorização real de futuras consultas deve depender do JWT da sessão e das políticas RLS, nunca de IDs enviados pelo frontend sem validação no banco. O código não atribui papel administrativo: admite qualquer usuário autenticado não anônimo do projeto. Revisar a política de criação de contas antes de uso real.
+O HTML e JavaScript continuam sendo arquivos públicos da hospedagem estática. O guard é uma proteção de navegação/interface, não autorização de banco. A autorização real de futuras consultas deve depender do JWT da sessão e das políticas RLS, nunca de IDs enviados pelo frontend sem validação no banco. O fluxo de login ainda admite qualquer usuário autenticado não anônimo e não consulta papéis; a página e as funcionalidades atuais não mudam conforme o papel.
+
+## Perfis de acesso preparados
+
+A migration `supabase/migrations/003_user_roles.sql` prepara `public.user_roles`, vinculando `user_id` ao UUID de `auth.users` e restringindo `role` a `admin` ou `user`. Ela não insere perfis, não escolhe o primeiro usuário e não promove nenhuma conta automaticamente. A migration ainda precisa ser aplicada manualmente no Supabase.
+
+Após aplicá-la, o proprietário do projeto deve identificar cada UUID em **Authentication → Users** e provisionar os papéis pelo SQL Editor. Não inclua UUIDs, e-mails ou outros dados pessoais reais no repositório:
+
+```sql
+-- Substitua os placeholders pelos UUIDs conferidos em Authentication → Users.
+-- A conta principal recebe admin somente por esta ação manual explícita.
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('<UUID_DA_CONTA_ADMIN>'::uuid, 'admin')
+ON CONFLICT (user_id) DO UPDATE SET role = EXCLUDED.role;
+
+-- Registre contas comuns sem alterar um papel que já exista.
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('<UUID_DA_CONTA_COMUM>'::uuid, 'user')
+ON CONFLICT (user_id) DO NOTHING;
+```
+
+As contas autenticadas podem consultar somente o próprio registro e não recebem `INSERT`, `UPDATE` nem `DELETE` na tabela. Portanto, não conseguem promover a própria conta pelo cliente. A gestão dos papéis permanece restrita ao proprietário via SQL Editor; ainda não existe tela de administração ou provisionamento automático de novos usuários.
+
+Esta tabela registra papéis, mas ainda não os usa para conceder acesso a dados de terceiros. A migration não altera as políticas de Filamentos, não habilita visualização entre usuários e não implementa reset ou gestão de contas. Até uma etapa futura que altere autorização no banco, o frontend continua tratando todos os usuários autenticados conforme o fluxo atual.
 
 ## Teste local
 
@@ -45,7 +68,7 @@ Testes automatizados sem dependências: `node tests/auth.test.cjs` (Node apenas 
 
 - Configurar e testar com URL/chave reais e o usuário existente; nenhum segredo ou credencial foi fornecido nesta implementação.
 - Auditar RLS de `filamentos` e `filamentos_movimentacoes` com requisições anônimas e dois usuários: leitura, inserção, atualização e exclusão devem respeitar `user_id`, incluindo `WITH CHECK` e vínculo entre movimento e rolo. As políticas informadas pelo usuário não foram inspecionadas.
-- Restringir cadastro público no Authentication se somente usuários convidados puderem acessar; definir papéis se nem todo usuário autenticado for administrador. Ausência de botão de cadastro não impede chamadas diretas ao Auth.
+- Restringir cadastro público no Authentication se somente usuários convidados puderem acessar; a ausência de botão de cadastro não impede chamadas diretas ao Auth. Aplicar a migration de papéis e provisionar explicitamente as contas pelo procedimento acima.
 - Corrigir os usos existentes de `innerHTML` com conteúdo de usuário antes de confiar dados sensíveis ou sessões reais ao Admin. XSS na mesma origem pode comprometer tokens do SDK. Esses problemas prévios estão registrados em `ADMIN.md` e `DATA-MODEL.md` e não foram refatorados nesta etapa.
 - Revisar políticas de senha, recuperação, limitação de tentativas, MFA conforme necessidade, HTTPS, CSP e atualização/integridade do SDK. A versão foi fixada; não houve auditoria de dependência nem configuração de CSP.
 - Testar expiração/revogação e falhas de rede no projeto real. Logout revoga a sessão/refresh token conforme o escopo; um access token já emitido pode continuar válido até expirar. RLS deve sempre permanecer habilitado.

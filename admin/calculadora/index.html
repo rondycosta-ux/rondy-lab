@@ -79,6 +79,8 @@
             </header>
 
             <main class="admin-calculadora-page">
+                <p id="calculator-load-status" class="admin-form-message" role="status">Carregando dados da sua conta…</p>
+                <button id="retry-calculator-load" type="button" class="admin-button" hidden>TENTAR NOVAMENTE</button>
                 <div class="calculator-layout">
                     <section class="calculator-form-panel">
                         <div class="calculator-section">
@@ -274,6 +276,7 @@
                         <div class="calculator-summary__header">
                             <h2>RESUMO DO CUSTO</h2>
                         </div>
+                        <div id="calculator-cost-warnings" aria-live="polite"></div>
 
                         <div class="summary-list">
                             <div class="summary-line"><span>Filamento</span><strong id="summary-material">R$ 0,00</strong></div>

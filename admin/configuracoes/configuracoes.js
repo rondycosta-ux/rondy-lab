@@ -1,10 +1,4 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    if (!window.RondyAuth || !(await window.RondyAuth.ready)) return;
-    const STORAGE_KEYS = {
-        settings: 'rondyLabConfiguracoesGerais',
-        printers: 'rondyLabConfiguracoesImpressoras'
-    };
-
     const DEFAULT_SETTINGS = {
         tarifaEnergia: null,
         perdaPadrao: null,
@@ -20,31 +14,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cancelPrinterFormButton = document.getElementById('cancel-printer-form');
     const printerFormMessage = document.getElementById('printer-form-message');
     const printerList = document.getElementById('printer-list');
+    const loadStatus = document.getElementById('config-load-status');
+    const retryLoadButton = document.getElementById('retry-config-load');
+    const settingsInputs = [tarifaInput, perdaInput, maoObraInput];
+    const printerControls = [
+        togglePrinterFormButton,
+        ...printerForm.querySelectorAll('input, button')
+    ];
 
+    let client;
+    let authenticatedUserId = null;
+    let settings = { ...DEFAULT_SETTINGS };
+    let printers = [];
+    let loaded = false;
     let editingPrinterId = null;
+    let pendingSettings = null;
+    let savingSettings = false;
+    let printerMutationInProgress = false;
 
-    function readStorage(key, fallback) {
-        try {
-            const rawValue = localStorage.getItem(key);
-            if (!rawValue) {
-                return fallback;
-            }
-
-            const parsedValue = JSON.parse(rawValue);
-            return parsedValue ?? fallback;
-        } catch (error) {
-            console.warn('Erro ao ler localStorage:', error);
-            return fallback;
-        }
-    }
-
-    function writeStorage(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch (error) {
-            console.warn('Erro ao salvar localStorage:', error);
-        }
-    }
+    settingsInputs.forEach((input) => { input.disabled = true; });
+    printerControls.forEach((control) => { control.disabled = true; });
+    retryLoadButton.hidden = true;
+    loadStatus.textContent = 'Aguardando verificação da sessão…';
 
     function safeNumber(value, fallback = 0) {
         const parsed = Number(value);
@@ -60,6 +51,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         return Number.isFinite(parsed) ? parsed : null;
     }
 
+    function getErrorMessage(error) {
+        return error && typeof error.message === 'string' && error.message
+            ? error.message
+            : 'Verifique a conexão e tente novamente.';
+    }
+
+    function databaseNumber(value, fieldName) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) {
+            throw new Error(`O campo ${fieldName} retornado pelo Supabase não contém um número válido.`);
+        }
+        return parsed;
+    }
+
+    function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[character]);
+    }
+
     function formatCurrency(value) {
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
@@ -69,44 +84,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }).format(value);
     }
 
-    function getSettings() {
-        const savedSettings = readStorage(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+    function settingsFromInputs() {
         return {
-            ...DEFAULT_SETTINGS,
-            ...savedSettings
-        };
-    }
-
-    function saveSettings(settings) {
-        writeStorage(STORAGE_KEYS.settings, {
-            tarifaEnergia: normalizaNumero(settings.tarifaEnergia),
-            perdaPadrao: normalizaNumero(settings.perdaPadrao),
-            maoObraPadrao: normalizaNumero(settings.maoObraPadrao)
-        });
-    }
-
-    function getPrinters() {
-        const savedPrinters = readStorage(STORAGE_KEYS.printers, []);
-        return Array.isArray(savedPrinters) ? savedPrinters : [];
-    }
-
-    function savePrinters(printers) {
-        writeStorage(STORAGE_KEYS.printers, printers);
-    }
-
-    function updateSettingsFromInputs() {
-        const settings = {
             tarifaEnergia: normalizaNumero(tarifaInput.value),
             perdaPadrao: normalizaNumero(perdaInput.value),
             maoObraPadrao: normalizaNumero(maoObraInput.value)
         };
-
-        saveSettings(settings);
     }
 
     function setFormMessage(message, isError = false) {
         printerFormMessage.textContent = message;
         printerFormMessage.classList.toggle('is-error', isError);
+        printerFormMessage.setAttribute('role', isError ? 'alert' : 'status');
+    }
+
+    function setLoadStatus(message, isError = false) {
+        loadStatus.textContent = message;
+        loadStatus.classList.toggle('is-error', isError);
+        loadStatus.setAttribute('role', isError ? 'alert' : 'status');
     }
 
     function calculateDepreciacaoHora(printer) {
@@ -117,15 +112,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderSettings() {
-        const settings = getSettings();
         tarifaInput.value = settings.tarifaEnergia ?? '';
         perdaInput.value = settings.perdaPadrao ?? '';
         maoObraInput.value = settings.maoObraPadrao ?? '';
     }
 
     function renderPrinters() {
-        const printers = getPrinters();
-
         if (!printers.length) {
             printerList.innerHTML = '<div class="printer-list__empty">Nenhuma impressora cadastrada. Cadastre uma nova máquina para começar a calcular o custo por hora.</div>';
             return;
@@ -135,12 +127,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const depreciacaoHora = calculateDepreciacaoHora(printer);
 
             return `
-                <article class="printer-item" data-printer-id="${printer.id}">
+                <article class="printer-item" data-printer-id="${escapeHTML(printer.id)}">
                     <div class="printer-item__header">
-                        <h3>${printer.nome}</h3>
+                        <h3>${escapeHTML(printer.nome)}</h3>
                         <div class="printer-item__actions">
-                            <button type="button" data-action="edit" data-printer-id="${printer.id}">Editar</button>
-                            <button type="button" data-action="delete" data-printer-id="${printer.id}">Excluir</button>
+                            <button type="button" data-action="edit" data-printer-id="${escapeHTML(printer.id)}">Editar</button>
+                            <button type="button" data-action="delete" data-printer-id="${escapeHTML(printer.id)}">Excluir</button>
                         </div>
                     </div>
 
@@ -171,6 +163,175 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </article>
             `;
         }).join('');
+    }
+
+    function mapSettings(row) {
+        if (!row || row.user_id !== authenticatedUserId) {
+            throw new Error('A consulta retornou configurações sem propriedade válida.');
+        }
+
+        return {
+            tarifaEnergia: row.tarifa_energia === null
+                ? null
+                : databaseNumber(row.tarifa_energia, 'tarifa_energia'),
+            perdaPadrao: row.perda_padrao === null
+                ? null
+                : databaseNumber(row.perda_padrao, 'perda_padrao'),
+            maoObraPadrao: row.mao_obra_padrao === null
+                ? null
+                : databaseNumber(row.mao_obra_padrao, 'mao_obra_padrao')
+        };
+    }
+
+    function mapPrinter(row) {
+        if (!row || row.user_id !== authenticatedUserId || !row.id) {
+            throw new Error('A consulta retornou uma impressora sem propriedade ou identificador válido.');
+        }
+
+        return {
+            id: String(row.id),
+            nome: String(row.nome),
+            valorPago: databaseNumber(row.valor_pago, 'valor_pago'),
+            vidaUtilHoras: databaseNumber(row.vida_util_horas, 'vida_util_horas'),
+            consumoWatts: databaseNumber(row.consumo_watts, 'consumo_watts'),
+            manutencaoHora: databaseNumber(row.manutencao_hora, 'manutencao_hora')
+        };
+    }
+
+    function setDataControlsDisabled(disabled) {
+        settingsInputs.forEach((input) => { input.disabled = disabled; });
+        printerControls.forEach((control) => { control.disabled = disabled; });
+    }
+
+    function showPrinterListMessage(message, className = '') {
+        const item = document.createElement('div');
+        item.className = className;
+        item.textContent = message;
+        printerList.replaceChildren(item);
+    }
+
+    async function loadData() {
+        loaded = false;
+        settings = { ...DEFAULT_SETTINGS };
+        printers = [];
+        authenticatedUserId = null;
+        pendingSettings = null;
+        editingPrinterId = null;
+        renderSettings();
+        setDataControlsDisabled(true);
+        retryLoadButton.hidden = true;
+        setLoadStatus('Carregando configurações e impressoras do Supabase…');
+        showPrinterListMessage('Carregando…');
+
+        try {
+            client = window.RondySupabase.getClient();
+            const { data: userData, error: userError } = await client.auth.getUser();
+            if (userError) throw userError;
+            if (!userData?.user || userData.user.is_anonymous) {
+                throw new Error('Não foi possível confirmar o usuário autenticado.');
+            }
+
+            authenticatedUserId = userData.user.id;
+            const [settingsResult, printersResult] = await Promise.all([
+                client.from('configuracoes_usuario')
+                    .select('user_id, tarifa_energia, perda_padrao, mao_obra_padrao')
+                    .eq('user_id', authenticatedUserId)
+                    .maybeSingle(),
+                client.from('impressoras')
+                    .select('id, user_id, nome, valor_pago, vida_util_horas, consumo_watts, manutencao_hora')
+                    .eq('user_id', authenticatedUserId)
+                    .order('criado_em', { ascending: true })
+            ]);
+
+            if (settingsResult.error) throw settingsResult.error;
+            if (printersResult.error) throw printersResult.error;
+            if (!Array.isArray(printersResult.data)) {
+                throw new Error('A consulta ao Supabase não retornou uma lista válida de impressoras.');
+            }
+
+            const loadedSettings = settingsResult.data
+                ? mapSettings(settingsResult.data)
+                : { ...DEFAULT_SETTINGS };
+            const loadedPrinters = printersResult.data.map(mapPrinter);
+
+            settings = loadedSettings;
+            printers = loadedPrinters;
+            renderSettings();
+            renderPrinters();
+            loaded = true;
+            setDataControlsDisabled(false);
+            setLoadStatus('Configurações e impressoras carregadas.');
+        } catch (error) {
+            console.error('Não foi possível carregar configurações e impressoras do Supabase:', error);
+            authenticatedUserId = null;
+            settings = { ...DEFAULT_SETTINGS };
+            printers = [];
+            renderSettings();
+            showPrinterListMessage('Não foi possível carregar as impressoras. Tente novamente.', 'printer-list__empty');
+            setDataControlsDisabled(true);
+            setLoadStatus(`Não foi possível carregar as configurações e impressoras. ${getErrorMessage(error)}`, true);
+            retryLoadButton.hidden = false;
+        }
+    }
+
+    async function writeSettings(nextSettings) {
+        const settingsValues = {
+            tarifa_energia: nextSettings.tarifaEnergia,
+            perda_padrao: nextSettings.perdaPadrao,
+            mao_obra_padrao: nextSettings.maoObraPadrao
+        };
+
+        async function updateExistingSettings() {
+            const { data, error } = await client.from('configuracoes_usuario')
+                .update(settingsValues)
+                .eq('user_id', authenticatedUserId)
+                .select('user_id')
+                .maybeSingle();
+            if (error) throw error;
+            if (data && data.user_id !== authenticatedUserId) {
+                throw new Error('A resposta do Supabase retornou configurações de outro usuário.');
+            }
+            return Boolean(data);
+        }
+
+        if (await updateExistingSettings()) return;
+
+        const { error } = await client.from('configuracoes_usuario')
+            .insert({ ...settingsValues, user_id: authenticatedUserId });
+        if (!error) return;
+        if (error.code !== '23505') throw error;
+
+        if (!(await updateExistingSettings())) {
+            throw new Error('Não foi possível confirmar a linha de configurações após um conflito de gravação.');
+        }
+    }
+
+    async function flushSettingsSaves() {
+        savingSettings = true;
+        try {
+            while (pendingSettings) {
+                const nextSettings = pendingSettings;
+                pendingSettings = null;
+                setLoadStatus('Salvando configurações…');
+
+                try {
+                    await writeSettings(nextSettings);
+                    if (!pendingSettings) setLoadStatus('Configurações salvas.');
+                } catch (error) {
+                    console.error('Não foi possível salvar as configurações no Supabase:', error);
+                    setLoadStatus(`Não foi possível salvar as configurações. ${getErrorMessage(error)}`, true);
+                }
+            }
+        } finally {
+            savingSettings = false;
+            if (pendingSettings) void flushSettingsSaves();
+        }
+    }
+
+    function queueSettingsSave() {
+        if (!loaded) return;
+        pendingSettings = settingsFromInputs();
+        if (!savingSettings) void flushSettingsSaves();
     }
 
     function resetForm() {
@@ -214,8 +375,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         return '';
     }
 
-    function handlePrinterSubmit(event) {
+    async function handlePrinterSubmit(event) {
         event.preventDefault();
+        if (!loaded || printerMutationInProgress) return;
 
         const formData = new FormData(printerForm);
         const values = {
@@ -232,38 +394,55 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const printers = getPrinters();
+        printerMutationInProgress = true;
+        printerControls.forEach((control) => { control.disabled = true; });
+        setFormMessage('Salvando impressora…');
+        const payload = {
+            nome: values.nome,
+            valor_pago: values.valorPago,
+            vida_util_horas: values.vidaUtilHoras,
+            consumo_watts: values.consumoWatts,
+            manutencao_hora: values.manutencaoHora
+        };
 
-        if (editingPrinterId) {
-            const index = printers.findIndex((printer) => printer.id === editingPrinterId);
-            if (index >= 0) {
-                printers[index] = {
-                    ...printers[index],
-                    nome: values.nome,
-                    valorPago: values.valorPago,
-                    vidaUtilHoras: values.vidaUtilHoras,
-                    consumoWatts: values.consumoWatts,
-                    manutencaoHora: values.manutencaoHora
-                };
+        try {
+            if (editingPrinterId) {
+                const { data, error } = await client.from('impressoras')
+                    .update(payload)
+                    .eq('id', editingPrinterId)
+                    .eq('user_id', authenticatedUserId)
+                    .select('id, user_id, nome, valor_pago, vida_util_horas, consumo_watts, manutencao_hora')
+                    .maybeSingle();
+                if (error) throw error;
+                if (!data) throw new Error('A impressora não foi encontrada para este usuário.');
+
+                const updatedPrinter = mapPrinter(data);
+                printers = printers.map((printer) => (
+                    printer.id === updatedPrinter.id ? updatedPrinter : printer
+                ));
+            } else {
+                const { data, error } = await client.from('impressoras')
+                    .insert({ ...payload, user_id: authenticatedUserId })
+                    .select('id, user_id, nome, valor_pago, vida_util_horas, consumo_watts, manutencao_hora')
+                    .single();
+                if (error) throw error;
+
+                printers.push(mapPrinter(data));
             }
-        } else {
-            printers.push({
-                id: `printer-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-                nome: values.nome,
-                valorPago: values.valorPago,
-                vidaUtilHoras: values.vidaUtilHoras,
-                consumoWatts: values.consumoWatts,
-                manutencaoHora: values.manutencaoHora
-            });
-        }
 
-        savePrinters(printers);
-        renderPrinters();
-        closeForm();
+            renderPrinters();
+            closeForm();
+        } catch (error) {
+            console.error('Não foi possível salvar a impressora no Supabase:', error);
+            setFormMessage(`Não foi possível salvar a impressora. ${getErrorMessage(error)}`, true);
+        } finally {
+            printerMutationInProgress = false;
+            if (loaded) printerControls.forEach((control) => { control.disabled = false; });
+        }
     }
 
     function populatePrinterForm(printerId) {
-        const printer = getPrinters().find((item) => item.id === printerId);
+        const printer = printers.find((item) => item.id === printerId);
         if (!printer) {
             return;
         }
@@ -278,8 +457,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         openForm();
     }
 
-    function deletePrinter(printerId) {
-        const printers = getPrinters();
+    async function deletePrinter(printerId) {
+        if (!loaded || printerMutationInProgress) return;
         const printer = printers.find((item) => item.id === printerId);
 
         if (!printer) {
@@ -291,20 +470,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const remainingPrinters = printers.filter((item) => item.id !== printerId);
-        savePrinters(remainingPrinters);
-        renderPrinters();
+        printerMutationInProgress = true;
+        printerControls.forEach((control) => { control.disabled = true; });
+        setFormMessage('Excluindo impressora…');
+        try {
+            const { data, error } = await client.from('impressoras')
+                .delete()
+                .eq('id', printerId)
+                .eq('user_id', authenticatedUserId)
+                .select('id')
+                .maybeSingle();
+            if (error) throw error;
+            if (!data) throw new Error('A impressora não foi encontrada para este usuário.');
 
-        if (editingPrinterId === printerId) {
-            closeForm();
+            printers = printers.filter((item) => item.id !== printerId);
+            renderPrinters();
+            if (editingPrinterId === printerId) closeForm();
+        } catch (error) {
+            console.error('Não foi possível excluir a impressora no Supabase:', error);
+            setFormMessage(`Não foi possível excluir a impressora. ${getErrorMessage(error)}`, true);
+        } finally {
+            printerMutationInProgress = false;
+            if (loaded) printerControls.forEach((control) => { control.disabled = false; });
         }
     }
 
-    tarifaInput.addEventListener('input', updateSettingsFromInputs);
-    perdaInput.addEventListener('input', updateSettingsFromInputs);
-    maoObraInput.addEventListener('input', updateSettingsFromInputs);
+    settingsInputs.forEach((input) => {
+        input.addEventListener('input', queueSettingsSave);
+    });
 
     togglePrinterFormButton.addEventListener('click', () => {
+        if (!loaded || printerMutationInProgress) return;
         const isHidden = printerFormPanel.classList.contains('is-hidden');
         if (isHidden) {
             openForm();
@@ -319,7 +515,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     printerList.addEventListener('click', (event) => {
         const target = event.target.closest('button[data-action]');
-        if (!target) {
+        if (!target || !loaded || printerMutationInProgress) {
             return;
         }
 
@@ -331,10 +527,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (action === 'delete') {
-            deletePrinter(printerId);
+            void deletePrinter(printerId);
         }
     });
 
-    renderSettings();
-    renderPrinters();
+    retryLoadButton.addEventListener('click', () => { void loadData(); });
+
+    if (!window.RondyAuth || !(await window.RondyAuth.ready)) {
+        setLoadStatus('Não foi possível confirmar a sessão. Verifique o acesso e tente novamente.', true);
+        retryLoadButton.hidden = false;
+        return;
+    }
+
+    await loadData();
 });

@@ -309,6 +309,29 @@ svg {
     padding: 2.25rem 2rem 3rem;
 }
 
+.filamentos-load-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.filamentos-load-controls .admin-form-message {
+    flex: 1 1 280px;
+    margin: 0;
+}
+
+.filamentos-load-controls button[hidden] {
+    display: none;
+}
+
+.admin-filamentos-page .admin-button:disabled,
+.filamento-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .compact-indicators {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -76,10 +76,16 @@
                     <h1 class="admin-header__title">ESTOQUE DE FILAMENTOS</h1>
                     <p class="admin-header__subtitle">Controle os materiais disponíveis e seus custos de produção.</p>
                 </div>
-                <button id="open-filamento-form" type="button" class="admin-button admin-button--primary admin-button--header">+ CADASTRAR FILAMENTO</button>
+                <button id="open-filamento-form" type="button" class="admin-button admin-button--primary admin-button--header" disabled aria-describedby="filamentos-write-status">+ CADASTRAR FILAMENTO</button>
             </header>
 
             <main class="admin-filamentos-page">
+                <p id="filamentos-write-status" class="admin-form-message" role="status">Cadastro, edição, arquivamento e movimentações serão habilitados após confirmar a sessão.</p>
+                <div class="filamentos-load-controls">
+                    <p id="filamentos-load-status" class="admin-form-message" role="status">Aguardando consulta ao Supabase…</p>
+                    <button id="retry-filamentos-load" type="button" class="admin-button admin-button--ghost" hidden>TENTAR NOVAMENTE</button>
+                </div>
+
                 <section class="compact-indicators" aria-label="Indicadores de filamentos">
                     <div class="compact-indicator">
                         <span class="compact-indicator__label">ROLOS CADASTRADOS</span>
@@ -176,10 +182,10 @@
                         </div>
 
                         <div class="filamento-form__footer">
-                            <div id="filamento-form-message" class="admin-form-message" aria-live="polite"></div>
+                            <div id="filamento-form-message" class="admin-form-message" aria-live="polite">Cadastre ou edite filamentos pelo formulário.</div>
                             <div class="filamento-form__actions">
                                 <button type="button" id="cancel-filamento-form" class="admin-button admin-button--ghost">CANCELAR</button>
-                                <button type="submit" class="admin-button admin-button--primary">SALVAR FILAMENTO</button>
+                                <button type="submit" class="admin-button admin-button--primary" disabled>SALVAR FILAMENTO</button>
                             </div>
                         </div>
                     </form>
@@ -200,7 +206,9 @@
                                     <th>AÇÕES</th>
                                 </tr>
                             </thead>
-                            <tbody id="filamentos-table-body"></tbody>
+                            <tbody id="filamentos-table-body">
+                                <tr><td colspan="8" class="empty-state">Aguardando consulta ao Supabase…</td></tr>
+                            </tbody>
                         </table>
                     </div>
                 </section>
@@ -221,6 +229,7 @@
 
         <form id="movimentacao-form" class="movimentacao-form">
             <h3>+ NOVA MOVIMENTAÇÃO</h3>
+            <p id="movimentacao-filamento-info" class="admin-form-message" aria-live="polite">Selecione um filamento ativo na listagem.</p>
 
             <div class="config-field">
                 <label for="movimento-tipo">Tipo</label>
@@ -240,7 +249,7 @@
             </div>
 
             <div class="config-field movimentacao-adjust-field is-hidden">
-                <label for="movimento-saldo-ajuste">Saldo real do rolo</label>
+                <label for="movimento-saldo-ajuste">Novo saldo final do rolo</label>
                 <div class="config-field__input-row">
                     <input id="movimento-saldo-ajuste" name="saldoAjuste" type="number" step="1" min="0" inputmode="numeric" placeholder="0">
                     <span class="config-field__unit">g</span>
@@ -252,8 +261,8 @@
                 <textarea id="movimento-observacao" name="observacao" rows="3" placeholder="Opcional"></textarea>
             </div>
 
-            <div id="movimento-form-message" class="admin-form-message" aria-live="polite"></div>
-            <button type="submit" class="admin-button admin-button--primary admin-button--full">REGISTRAR MOVIMENTAÇÃO</button>
+            <div id="movimento-form-message" class="admin-form-message" aria-live="polite">Informe a movimentação de estoque.</div>
+            <button type="submit" class="admin-button admin-button--primary admin-button--full" disabled>REGISTRAR MOVIMENTAÇÃO</button>
         </form>
     </aside>
 </body>

@@ -79,6 +79,11 @@
             </header>
 
             <main class="admin-config-page">
+                <div class="config-load-status">
+                    <p id="config-load-status" class="admin-form-message" role="status">Aguardando verificação da sessão…</p>
+                    <button id="retry-config-load" type="button" class="admin-button admin-button--ghost" hidden>TENTAR NOVAMENTE</button>
+                </div>
+
                 <section class="config-section" aria-labelledby="energia-title">
                     <div class="config-section__header">
                         <h2 id="energia-title">ENERGIA ELÉTRICA</h2>

@@ -1,6 +1,6 @@
 # Rondy Lab — Admin
 
-> Atualização — integração inicial com Supabase Auth: o Admin agora possui login por e-mail/senha, verificação de sessão e logout. Os dados operacionais continuam nas cinco chaves locais, sem migração. As afirmações abaixo sobre ausência de autenticação descrevem o levantamento anterior. Consulte `docs/SUPABASE-AUTH.md` para o estado atual e os limites desta etapa. As tabelas remotas existentes e suas políticas não foram alteradas nem auditadas nesta integração.
+> Atualização — o Admin possui login por e-mail/senha, verificação de sessão e logout. Filamentos consulta e cadastra no Supabase; os demais dados descritos neste documento ainda incluem persistência local. A migration `003_user_roles.sql` prepara uma tabela de papéis, mas precisa ser aplicada manualmente e seus papéis ainda não alteram acesso aos módulos. Consulte `docs/SUPABASE-AUTH.md` para o procedimento de provisionamento e os limites atuais.
 
 Referência funcional e operacional baseada no código consultado em 7 de outubro de 2026. Este levantamento foi feito por leitura de arquivos, sem executar operações no navegador ou acessar dados reais do `localStorage`.
 
@@ -17,9 +17,9 @@ Fontes analisadas:
 
 ## 1. Visão geral do Admin
 
-O Admin tem como objetivo centralizar a gestão operacional e comercial de um pequeno negócio de impressão 3D. Hoje oferece configurações, cadastro de impressoras, controle local de filamentos e simulações de custo e preço. A integração completa entre produção, produtos, pedidos e vendas ainda é uma visão futura.
+O Admin tem como objetivo centralizar a gestão operacional e comercial de um pequeno negócio de impressão 3D. Hoje oferece configurações e cadastro de impressoras locais, consulta/cadastro remoto de filamentos e simulações de custo e preço. A integração completa entre produção, produtos, pedidos e vendas ainda é uma visão futura.
 
-O site público apresenta a marca, o catálogo e os canais de contato. O Admin, em `/admin/`, é orientado à operação interna e possui estilos e scripts próprios. Não há autenticação; uma URL não divulgada não é controle de acesso.
+O site público apresenta a marca, o catálogo e os canais de contato. O Admin, em `/admin/`, é orientado à operação interna e possui estilos e scripts próprios. As páginas privadas exigem sessão Supabase válida; a autorização dos dados remotos depende de RLS, não da URL nem do guard visual.
 
 A sidebar apresenta, nesta ordem: Dashboard, Calculadora, Produtos, Pedidos, Estoque, Filamentos, Consignação e Configurações. Impressoras fica dentro de Configurações. Produção não possui página nem item próprio na navegação. A marca da sidebar leva ao Dashboard; a página ativa usa `.is-active` definida no HTML.
 
@@ -32,7 +32,7 @@ A sidebar apresenta, nesta ordem: Dashboard, Calculadora, Produtos, Pedidos, Est
 | Dashboard | Visão operacional e atalhos | Interface com indicadores estáticos | Navegação; sem leitura de dados dos módulos | Consolidar indicadores reais, sem KPIs adicionais definidos |
 | Configurações | Parâmetros gerais de cálculo | Implementado | Persistência local | Consolidar validação e tratamento de ausência; decisões específicas pendentes |
 | Impressoras | Parâmetros de cada máquina | Implementado dentro de Configurações | Persistência local; lido pela Calculadora | Manter compatibilidade com futuras integrações |
-| Filamentos | Cadastro por rolo, saldo e movimentos | Implementado com limitações de auditabilidade | Persistência local; lido pela Calculadora | Integrar consumo real à produção, com regras futuras |
+| Filamentos | Cadastro por rolo, saldo e movimentos | Leitura de dados próprios e cadastro inicial no Supabase; demais escritas ainda bloqueadas | Supabase/RLS; Calculadora ainda lê chave local legada | Integrar movimentações reais e compatibilizar a Calculadora |
 | Calculadora | Simular custos e preços, salvar histórico | Implementado | Configurações, Impressoras e Filamentos | Consolidar cálculos; vínculo com Produtos/Pedidos ainda indefinido |
 | Produtos | Organizar itens fabricados e comercializados | Placeholder | Nenhuma integração operacional atual | Cadastro e integração futura ao catálogo público |
 | Pedidos | Acompanhar demandas de clientes | Placeholder | Dependências futuras com Produtos e Produção | Definir dados, estados e fluxo |
@@ -93,23 +93,23 @@ Após salvar, a lista é atualizada e o formulário é fechado e limpo. Cancelar
 
 ### Cadastro individual e custo
 
-Cada rolo é um registro próprio com ID, mesmo que compartilhe marca, material, linha e cor com outros. IDs usam prefixo `filamento`, timestamp e sufixo aleatório. Há `criadoEm` e `atualizadoEm` em ISO; a edição mantém o ID e a criação.
+Cada rolo é um registro próprio com ID, mesmo que compartilhe marca, material, linha e cor com outros. O módulo agora consulta `public.filamentos` no Supabase e mapeia os campos snake_case para o formato camelCase exibido. A lista principal inclui apenas `arquivado = false`; as consultas usam a sessão autenticada e RLS. `criado_em` e `atualizado_em` são datas remotas. Os IDs e datas das chaves locais continuam preservados e não são importados nem alterados nesta etapa.
 
-| Campo | Comportamento e validação implementados |
+| Campo | Comportamento e validação do fluxo local legado |
 | --- | --- |
-| Material | Lista fechada: PLA, PETG, ABS, ASA, TPU e Outro; script rejeita valores fora dela |
-| Marca | Obrigatória, pelo menos dois caracteres após aparar espaços |
+| Material | Lista fechada no formulário legado: PLA, PETG, ABS, ASA, TPU e Outro |
+| Marca | Obrigatória no cadastro/edição legados, pelo menos dois caracteres após aparar espaços |
 | Linha/acabamento | Texto opcional |
-| Cor | Obrigatória, pelo menos dois caracteres após aparar espaços |
-| Peso nominal | Gramas; script exige maior que zero; HTML com mínimo 1 e passo 1 |
-| Quantidade disponível | Gramas; no cadastro e edição deve ficar entre zero e peso nominal |
-| Valor pago | R$; não pode ser negativo; vazio é convertido em zero |
+| Cor | Obrigatória nos fluxos legados, pelo menos dois caracteres após aparar espaços |
+| Peso nominal | Gramas; fluxo legado exige maior que zero; HTML com mínimo 1 e passo 1 |
+| Quantidade disponível | Gramas; cadastro e edição legados limitam entre zero e peso nominal |
+| Valor pago | R$; fluxo legado não aceita negativo; vazio é convertido em zero |
 | Observações | Texto opcional |
 | Custo por grama | Derivado de `valorPago / pesoNominal`, não do saldo atual; zero se peso nominal não for positivo |
 
 O custo exibido permite de duas a quatro casas decimais em BRL. Saldos e indicadores em gramas são apresentados arredondados, sem alterar necessariamente o número armazenado. `1000` aparece como placeholder de peso/saldo, não como quantidade gravada automaticamente.
 
-Cadastrar cria o rolo e uma movimentação ENTRADA com o saldo inicial, inclusive se ele for zero, com observação “Cadastro inicial do rolo.”. Editar pode alterar inclusive saldo, peso nominal e custo, mas não cria movimento correspondente. Excluir solicita confirmação e remove tanto o rolo quanto todos os seus movimentos. Não há bloqueio por referências em precificações.
+**Etapa atual — leitura e cadastro:** a interface carrega filamentos ativos e indicadores do Supabase. O formulário cadastra via RPC `cadastrar_filamento_com_entrada`, que cria o rolo e a movimentação ENTRADA inicial atomicamente, inclusive com saldo zero. IDs aleatórios seguros são mantidos durante a tentativa; se a resposta for incerta, a interface verifica os dois registros e não gera IDs novos para repetir sem essa verificação. Após sucesso, a lista é consultada novamente. Sem registros remotos, a lista aparece vazia mesmo que existam dados nas chaves locais. As chaves `rondyLabFilamentos` e `rondyLabFilamentosMovimentacoes` não são lidas, importadas, apagadas ou sobrescritas pelo módulo. Edição, exclusão e movimentações adicionais continuam desabilitadas.
 
 ### Busca, filtros e status
 
@@ -123,11 +123,11 @@ A busca considera material, marca, linha e cor, por substring sem diferenciar ma
 
 O limite de 20% já está fixado em `LOW_STOCK_THRESHOLD`; é um comportamento existente, não uma nova regra proposta nem uma configuração editável. O indicador Estoque baixo conta apenas esse status, excluindo esgotados. Os outros indicadores mostram número de rolos e soma do saldo disponível de todos os registros.
 
-**Divergência do filtro:** a opção HTML usa `disponivel`, enquanto o script converte `DISPONÍVEL` em `disponível`, preservando o acento. A comparação não coincide, portanto o filtro Disponíveis não encontra esses registros. Todos, Estoque baixo e Esgotados não têm essa diferença de acentuação.
+O filtro remove diacríticos ao comparar o status com as opções do HTML, incluindo Disponíveis.
 
-### Movimentações implementadas
+### Movimentações e histórico
 
-O painel lateral lista movimentos do rolo do mais recente para o mais antigo. Cada movimento tem ID, `filamentoId`, tipo, quantidade, data/hora ISO e observação opcional. Datas são exibidas com `toLocaleString('pt-BR')`.
+O painel lateral consulta `public.filamentos_movimentacoes` para o rolo selecionado e lista o resultado do mais recente para o mais antigo. A consulta utiliza a sessão Supabase, restringe por usuário/filamento e permanece sujeita a RLS. Os campos snake_case são mapeados para a representação da interface; datas são exibidas com `toLocaleString('pt-BR')`. O formulário de movimentação está desabilitado nesta etapa.
 
 | Tipo | Valor informado | Efeito no saldo | Validação |
 | --- | --- | --- | --- |
@@ -141,11 +141,10 @@ Em AJUSTE, `quantidade` guarda o saldo final informado, não a diferença em rel
 
 - Saldo atual reside no cadastro do rolo; a aplicação não o reconstrói a partir do histórico.
 - ENTRADA e AJUSTE podem elevar o saldo acima do peso nominal, embora cadastro/edição rejeitem essa situação.
-- Edição direta de saldo sem movimento e exclusão do histórico junto ao rolo impedem auditabilidade completa.
-- O histórico visual prefixa `+` em quantidades positivas tanto para ENTRADA quanto para CONSUMO; o saldo é subtraído corretamente no consumo, mas o sinal exibido é enganoso.
-- Um AJUSTE vazio é convertido em zero e passa na validação; não há distinção entre ausência e zero nesse fluxo.
-- Gravação do movimento e do saldo ocorre em chaves separadas, sem transação; uma falha pode deixar os dois inconsistentes.
-- Depois de registrar ou fechar o painel, o formulário é resetado sem reaplicar `toggleMovementFields()`. Após usar AJUSTE, a visibilidade dos campos pode ficar desalinhada com o tipo retornado a ENTRADA.
+- Edição, exclusão, arquivamento e movimentações posteriores ainda não estão integrados ao Supabase e permanecem bloqueados.
+- A Calculadora ainda consulta os dados locais legados; sua migração para o Supabase está fora desta etapa.
+- No formulário local legado, um AJUSTE vazio era convertido em zero. O formulário está desabilitado na integração atual.
+- As antigas gravações em chaves locais separadas não são mais executadas pelo módulo Filamentos.
 - Movimentos não possuem edição/exclusão individual na interface. Não há vínculo com pedido, produção ou operador.
 
 Essas limitações registram o comportamento atual; não definem a política desejada para o estoque futuro.
@@ -372,7 +371,7 @@ Hoje os eventos reais registrados são cadastro inicial de rolo e suas movimenta
 
 ## 14. Persistência e integridade
 
-O Admin usa `localStorage` com JSON, separado por origem e perfil de navegador. Live Server e produção podem acessar conjuntos diferentes. Não há sincronização entre dispositivos, banco remoto, API própria, autenticação, controle de permissões ou backup implementado na interface.
+Os módulos ainda locais usam `localStorage` com JSON, separado por origem e perfil de navegador. Live Server e produção podem acessar conjuntos diferentes. Auth e Filamentos utilizam Supabase, mas os papéis preparados em `public.user_roles` ainda não são consultados pelo frontend nem usados para conceder permissões adicionais. Não há sincronização remota para os demais módulos nem backup implementado na interface.
 
 As coleções funcionais atuais são configurações gerais, impressoras, filamentos, movimentos de filamentos e precificações. Os nomes exatos das chaves e os schemas completos deverão ser detalhados em `docs/DATA-MODEL.md`, ainda não existente neste levantamento. Este documento não renomeia nem redefine chaves.
 
