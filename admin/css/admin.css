@@ -392,6 +392,25 @@ svg {
     resize: vertical;
 }
 
+select {
+    color-scheme: dark;
+}
+
+select option {
+    background-color: var(--admin-panel);
+    color: var(--admin-text);
+}
+
+select option:checked {
+    background-color: var(--admin-accent);
+    color: var(--admin-text);
+}
+
+select option:disabled {
+    background-color: var(--admin-panel);
+    color: var(--admin-muted);
+}
+
 .config-field textarea {
     min-height: 100px;
 }
