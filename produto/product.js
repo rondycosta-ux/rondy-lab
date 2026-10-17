@@ -1,85 +1,83 @@
-const produtos = [
-    {
-        id: 'design-dia-a-dia',
-        categoria: 'HOME',
-        nome: 'Design para o dia a dia',
-        descricao: 'Objetos criados para unir funcionalidade, design e as possibilidades da impressão 3D.',
-        imagem: '../assets/images/prod1.jpg'
-    },
-    {
-        id: 'pecas-com-personalidade',
-        categoria: 'COLECIONÁVEIS',
-        nome: 'Peças que ganham personalidade',
-        descricao: 'Colecionáveis e peças decorativas que transformam personagens, referências e ideias em objetos reais.',
-        imagem: '../assets/images/prod2.jpg'
-    },
-    {
-        id: 'feito-para-voce',
-        categoria: 'CUSTOM',
-        nome: 'Feito especialmente para você',
-        descricao: 'Projetos personalizados criados a partir de uma ideia, referência ou necessidade específica.',
-        imagem: '../assets/images/prod3.jpg'
-    },
-    {
-        id: 'criatividade-diversao',
-        categoria: 'PLAY',
-        nome: 'Criatividade que vira diversão',
-        descricao: 'Brinquedos e objetos criativos que exploram as possibilidades da fabricação digital de forma divertida.',
-        imagem: '../assets/images/prod4.jpg'
-    }
-];
-
-const categoriaClasses = {
-    HOME: 'product-category--home',
-    COLECIONÁVEIS: 'product-category--colecionaveis',
-    CUSTOM: 'product-category--custom',
-    PLAY: 'product-category--play',
-    PETS: 'product-category--pets',
-    AUTO: 'product-category--auto'
-};
-
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('product-content');
     if (!container) return;
 
+    const catalog = window.RondyCatalog;
     const params = new URLSearchParams(window.location.search);
-    const productId = params.get('id');
-    const product = produtos.find((item) => item.id === productId);
+    const product = catalog.products.find((item) => item.id === params.get('id'));
 
     if (!product) {
-        container.innerHTML = `
-            <section class="product-not-found" aria-live="polite">
-                <h1>PRODUTO NÃO ENCONTRADO.</h1>
-                <p>O produto que você procura não está disponível.</p>
-                <a class="product-not-found__link" href="/catalogo/">VOLTAR AO CATÁLOGO <span aria-hidden="true">→</span></a>
-            </section>
-        `;
+        const notFound = document.createElement('section');
+        notFound.className = 'product-not-found';
+        notFound.setAttribute('aria-live', 'polite');
+
+        const title = document.createElement('h1');
+        title.textContent = 'PRODUTO NÃO ENCONTRADO.';
+        const message = document.createElement('p');
+        message.textContent = 'O produto que você procura não está disponível.';
+        const backLink = document.createElement('a');
+        backLink.className = 'product-not-found__link';
+        backLink.href = '../catalogo/';
+        backLink.append('VOLTAR AO CATÁLOGO ');
+        const arrow = document.createElement('span');
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.textContent = '→';
+        backLink.append(arrow);
+
+        notFound.append(title, message, backLink);
+        container.append(notFound);
         return;
     }
 
-    const categoryClass = categoriaClasses[product.categoria] || 'product-category--home';
+    const categoryNames = new Map(catalog.categories.map((category) => [category.id, category.name]));
+    const article = document.createElement('article');
+    article.className = 'product-detail';
+    article.setAttribute('aria-label', `Detalhes do produto ${product.name}`);
 
-    container.innerHTML = `
-        <article class="product-detail" aria-label="Detalhes do produto ${product.nome}">
-            <div class="product-detail__media">
-                <img src="${product.imagem}" alt="${product.nome}">
-            </div>
+    const media = document.createElement('div');
+    media.className = 'product-detail__media';
+    const image = document.createElement('img');
+    image.src = `../${product.image}`;
+    image.alt = product.name;
+    media.append(image);
 
-            <div class="product-detail__content">
-                <a class="product-detail__back" href="/catalogo/" aria-label="Voltar ao catálogo">← VOLTAR AO CATÁLOGO</a>
+    const content = document.createElement('div');
+    content.className = 'product-detail__content';
 
-                <span class="product-detail__category ${categoryClass}">${product.categoria}</span>
-                <h1 class="product-detail__title">${product.nome}</h1>
-                <p class="product-detail__description">${product.descricao}</p>
+    const backLink = document.createElement('a');
+    backLink.className = 'product-detail__back';
+    backLink.href = '../catalogo/';
+    backLink.setAttribute('aria-label', 'Voltar ao catálogo');
+    backLink.textContent = '← VOLTAR AO CATÁLOGO';
 
-                <a
-                    class="btn btn--primary product-detail__cta"
-                    href="/contato/?produto=${encodeURIComponent(product.nome)}"
-                    aria-label="Tenho interesse no produto ${product.nome}"
-                >
-                    TENHO INTERESSE <span aria-hidden="true">→</span>
-                </a>
-            </div>
-        </article>
-    `;
+    const category = document.createElement('span');
+    category.className = [
+        'product-detail__category',
+        ...product.categories.map((id) => `product-category--${id}`)
+    ].join(' ');
+    category.textContent = product.categories.map((id) => categoryNames.get(id)).join(' · ');
+
+    const title = document.createElement('h1');
+    title.className = 'product-detail__title';
+    title.textContent = product.name;
+
+    const description = document.createElement('p');
+    description.className = 'product-detail__description';
+    description.textContent = product.description;
+
+    const contact = document.createElement('a');
+    contact.className = 'btn btn--primary product-detail__cta';
+    contact.href = `../contato/?produto=${encodeURIComponent(product.name)}`;
+    contact.setAttribute('aria-label', `Tenho interesse no produto ${product.name}`);
+    contact.append('TENHO INTERESSE ');
+    const arrow = document.createElement('span');
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '→';
+    contact.append(arrow);
+
+    content.append(backLink, category, title, description, contact);
+    article.append(media, content);
+    container.append(article);
+
+    document.title = `${product.name} | Rondy Lab`;
 });

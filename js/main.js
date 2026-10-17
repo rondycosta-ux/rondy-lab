@@ -44,12 +44,119 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const catalogPage = document.querySelector('.catalog-page');
+    const catalog = window.RondyCatalog;
+    if (!catalog) return;
+
+    const productImagePath = (product) => `../${product.image}`;
+    const detailUrl = (product) => `../produto/?id=${encodeURIComponent(product.id)}`;
+    const categoryNames = new Map(catalog.categories.map((category) => [category.id, category.name]));
+    const categoryClasses = (baseClass, categories) => [
+        baseClass,
+        ...categories.map((id) => `${baseClass}--${id}`)
+    ].join(' ');
+
+    const createProductCard = (product) => {
+        const article = document.createElement('article');
+        article.className = 'catalog-product';
+        article.dataset.categories = product.categories.join(',');
+
+        const link = document.createElement('a');
+        link.href = detailUrl(product);
+        link.setAttribute('aria-label', `Ver detalhes do produto ${product.name}`);
+
+        const image = document.createElement('img');
+        image.src = productImagePath(product);
+        image.alt = product.name;
+        image.loading = 'lazy';
+        link.append(image);
+
+        const content = document.createElement('div');
+        content.className = 'catalog-product__content';
+
+        const category = document.createElement('span');
+        category.className = categoryClasses('catalog-product__category', product.categories);
+        category.textContent = product.categories.map((id) => categoryNames.get(id)).join(' · ');
+
+        const name = document.createElement('h2');
+        name.className = 'catalog-product__name';
+        name.textContent = product.name;
+
+        const details = document.createElement('span');
+        details.className = 'catalog-product__link';
+        details.append('VER DETALHES ');
+        const arrow = document.createElement('span');
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.textContent = '→';
+        details.append(arrow);
+
+        content.append(category, name, details);
+        link.append(content);
+        article.append(link);
+        return article;
+    };
+
+    const createFeaturedProduct = (product) => {
+        const article = document.createElement('article');
+        article.className = 'featured-product';
+
+        const link = document.createElement('a');
+        link.className = 'featured-product__link';
+        link.href = `/produto/?id=${encodeURIComponent(product.id)}`;
+        link.setAttribute('aria-label', `Ver produto ${product.name}`);
+
+        const image = document.createElement('img');
+        image.className = 'featured-product__image';
+        image.src = product.image;
+        image.alt = product.name;
+        image.loading = 'lazy';
+
+        const content = document.createElement('div');
+        content.className = 'featured-product__content';
+        const category = document.createElement('span');
+        category.className = categoryClasses('featured-product__category', product.categories);
+        category.textContent = product.categories.map((id) => categoryNames.get(id)).join(' · ');
+
+        const name = document.createElement('h3');
+        name.className = 'featured-product__name';
+        name.textContent = product.name;
+
+        content.append(category, name);
+        link.append(image, content);
+        article.append(link);
+        return article;
+    };
+
+    const featuredProducts = document.querySelector('.featured-products__grid');
+    if (featuredProducts) {
+        const featuredProductIds = [
+            'kit-fitness',
+            'gaviao-corinthians',
+            'hei-hei',
+            'homem-aranha-miles-morales'
+        ];
+        const featuredCatalogProducts = featuredProductIds.map((id) => {
+            const product = catalog.products.find((item) => item.id === id);
+            if (!product) throw new Error(`Produto em destaque não encontrado no catálogo: ${id}`);
+            return product;
+        });
+
+        featuredCatalogProducts.forEach((product) => {
+            featuredProducts.append(createFeaturedProduct(product));
+        });
+    }
+
     if (!catalogPage) return;
 
     const filters = Array.from(document.querySelectorAll('.catalog-filter'));
-    const products = Array.from(document.querySelectorAll('.catalog-product'));
+    const productsContainer = document.querySelector('.catalog-products');
     const emptyState = document.querySelector('.catalog-empty');
-    const validCategories = new Set(['all', 'home', 'colecionaveis', 'custom', 'play', 'pets', 'auto']);
+
+    catalog.products.forEach((product) => {
+        productsContainer.append(createProductCard(product));
+    });
+
+    const products = Array.from(productsContainer.querySelectorAll('.catalog-product'));
+    const validCategories = new Set(['all', ...catalog.categories.map((category) => category.id)]);
 
     const applyFilter = (selectedCategory) => {
         const normalized = validCategories.has(selectedCategory) ? selectedCategory : 'all';
@@ -62,22 +169,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         products.forEach((product) => {
-            const matches = normalized === 'all' || product.dataset.category === normalized;
+            const productCategories = product.dataset.categories.split(',');
+            const matches = normalized === 'all' || productCategories.includes(normalized);
             product.hidden = !matches;
             if (matches) visibleProducts += 1;
         });
 
         if (emptyState) {
-            const shouldShowEmpty = normalized !== 'all' && visibleProducts === 0;
-            emptyState.hidden = !shouldShowEmpty;
+            emptyState.hidden = normalized === 'all' || visibleProducts > 0;
         }
     };
 
     const params = new URLSearchParams(window.location.search);
-    const requestedCategory = params.get('categoria');
-    const initialCategory = validCategories.has(requestedCategory) ? requestedCategory : 'all';
-
-    applyFilter(initialCategory);
+    applyFilter(params.get('categoria'));
 
     filters.forEach((filter) => {
         filter.addEventListener('click', () => {

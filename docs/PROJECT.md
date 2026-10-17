@@ -91,16 +91,14 @@ Trabalha os conceitos:
 Organiza produtos por categorias.
 
 Categorias atuais:
-- HOME — objetos funcionais e utilidades.
-- COLECIONÁVEIS — figuras, peças decorativas e colecionáveis.
-- CUSTOM — projetos personalizados.
-- PLAY — brinquedos e objetos criativos.
-- PETS — produtos relacionados a animais de estimação.
-- AUTO — acessórios e soluções automotivas.
+- CHAVEIROS — chaveiros e acessórios criativos.
+- FITNESS — produtos inspirados no universo fitness.
+- COLECIONÁVEIS — personagens, peças decorativas e coleções.
+- GAMES — acessórios e suportes para setups e consoles.
 
 O catálogo possui filtros e aceita navegação por categoria através de parâmetros na URL.
 
-Os produtos atuais são demonstrativos e estão definidos diretamente no código.
+Os dados dos produtos públicos estão centralizados em `js/products.js`. O catálogo e as páginas de detalhes usam esse mesmo cadastro, com suporte a múltiplas categorias por produto.
 
 ### Detalhes do produto
 
