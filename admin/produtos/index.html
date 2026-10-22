@@ -14,6 +14,7 @@
     <script src="/admin/js/supabase-client.js" defer></script>
     <script src="/admin/js/auth.js" defer></script>
     <script src="/admin/js/admin.js" defer></script>
+    <script src="/admin/produtos/produtos.js" defer></script>
 </head>
 <body data-auth-page="protected">
     <section class="auth-gate" aria-label="Verificação de acesso">
@@ -74,15 +75,131 @@
                 <div>
                     <p class="admin-header__eyebrow">RONDY LAB / ADMIN</p>
                     <h1 class="admin-header__title">PRODUTOS</h1>
+                    <p class="admin-header__subtitle">Organize seus produtos, variações e saldo disponível para venda ou produção.</p>
                 </div>
+                <button id="open-produto-form" class="admin-button admin-button--primary admin-button--header" type="button" disabled>
+                    NOVO PRODUTO
+                </button>
             </header>
 
-            <main class="admin-module">
-                <div class="admin-module__card">
-                    <p class="admin-module__eyebrow">MÓDULO</p>
-                    <h2 class="admin-module__title">Produtos</h2>
-                    <p class="admin-module__status">Módulo em desenvolvimento.</p>
-                </div>
+            <main class="admin-produtos-page">
+                <section class="compact-indicators" aria-label="Resumo de produtos">
+                    <article class="compact-indicator">
+                        <span class="compact-indicator__label">Produtos ativos</span>
+                        <strong id="metric-produtos-ativos" class="compact-indicator__value">—</strong>
+                    </article>
+                    <article class="compact-indicator">
+                        <span class="compact-indicator__label">Variações</span>
+                        <strong id="metric-variacoes-ativas" class="compact-indicator__value">—</strong>
+                    </article>
+                    <article class="compact-indicator">
+                        <span class="compact-indicator__label">Unidades em estoque</span>
+                        <strong id="metric-estoque-total" class="compact-indicator__value">—</strong>
+                    </article>
+                </section>
+
+                <section id="produto-form-panel" class="filamento-form-panel is-hidden" aria-labelledby="produto-form-title">
+                    <div class="filamento-form__header">
+                        <h2 id="produto-form-title">NOVO PRODUTO</h2>
+                    </div>
+                    <form id="produto-form">
+                        <div class="filamento-form__grid">
+                            <div class="config-field config-field--full">
+                                <label for="produto-nome">Nome do produto</label>
+                                <input id="produto-nome" name="nome" type="text" minlength="1" maxlength="200" required autocomplete="off">
+                            </div>
+                            <div class="config-field config-field--full">
+                                <label for="produto-descricao">Descrição</label>
+                                <textarea id="produto-descricao" name="descricao" placeholder="Opcional"></textarea>
+                            </div>
+                            <div class="config-field">
+                                <label for="produto-tipo-atendimento">Tipo de atendimento</label>
+                                <select id="produto-tipo-atendimento" name="tipoAtendimento" required>
+                                    <option value="pronta_entrega">Pronta entrega</option>
+                                    <option value="sob_encomenda">Sob encomenda</option>
+                                </select>
+                            </div>
+                            <div class="config-field">
+                                <label for="produto-custo-base">Custo base</label>
+                                <div class="config-field__input-row">
+                                    <span class="config-field__currency">R$</span>
+                                    <input id="produto-custo-base" name="custoBase" type="number" min="0" step="0.01" required inputmode="decimal">
+                                </div>
+                            </div>
+                            <div class="config-field">
+                                <label for="produto-preco-base">Preço de venda base</label>
+                                <div class="config-field__input-row">
+                                    <span class="config-field__currency">R$</span>
+                                    <input id="produto-preco-base" name="precoBase" type="number" min="0" step="0.01" required inputmode="decimal">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filamento-form__footer">
+                            <div id="produto-form-message" class="admin-form-message" aria-live="polite">Preencha os dados para cadastrar um novo produto.</div>
+                            <div class="filamento-form__actions">
+                                <button id="cancel-produto-form" type="button" class="admin-button admin-button--ghost">CANCELAR</button>
+                                <button id="submit-produto-form" type="submit" class="admin-button admin-button--primary">SALVAR PRODUTO</button>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="produtos-listagem" aria-labelledby="produtos-listagem-title">
+                    <div class="produtos-listagem__header">
+                        <div>
+                            <h2 id="produtos-listagem-title">LISTAGEM DE PRODUTOS</h2>
+                            <p>Consulte os produtos ativos, suas variações e o saldo disponível.</p>
+                        </div>
+                    </div>
+
+                    <div id="produtos-toolbar" class="filamentos-toolbar produtos-toolbar" aria-label="Filtros de produtos" aria-disabled="true">
+                        <div class="filamentos-toolbar__search">
+                            <label class="sr-only" for="produto-search">Buscar produto por nome</label>
+                            <input id="produto-search" type="search" placeholder="Buscar por nome do produto" disabled>
+                        </div>
+                        <div class="filamentos-toolbar__filter">
+                            <label class="sr-only" for="produto-tipo-filter">Filtrar por tipo de atendimento</label>
+                            <select id="produto-tipo-filter" disabled>
+                                <option value="todos">Todos os tipos de atendimento</option>
+                                <option value="pronta_entrega">Pronta entrega</option>
+                                <option value="sob_encomenda">Sob encomenda</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <p id="produtos-listagem-notice" class="produtos-listagem__notice">Carregando produtos da sua conta…</p>
+
+                    <div id="produtos-table-wrap" class="filamentos-table-wrap produtos-table-wrap is-hidden">
+                        <div class="table-responsive">
+                            <table class="filamentos-table produtos-table">
+                                <caption class="sr-only">Produtos cadastrados</caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Produto</th>
+                                        <th scope="col">Tipo de atendimento</th>
+                                        <th scope="col">Preço base</th>
+                                        <th scope="col">Variações</th>
+                                        <th scope="col">Estoque total</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="produtos-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <section id="produtos-loading-state" class="produtos-state produtos-state--loading" aria-live="polite" aria-label="Carregando produtos">
+                        <p class="produtos-state__eyebrow">CARREGANDO</p>
+                        <p>Carregando os produtos da sua conta…</p>
+                    </section>
+
+                    <section id="produtos-error-state" class="produtos-state produtos-state--error is-hidden" role="alert" aria-label="Erro ao carregar produtos">
+                        <p class="produtos-state__eyebrow">NÃO FOI POSSÍVEL CARREGAR</p>
+                        <p id="produtos-error-message">Não foi possível obter os produtos. Verifique a conexão e tente novamente.</p>
+                        <button id="retry-produtos-load" class="admin-button" type="button">TENTAR NOVAMENTE</button>
+                    </section>
+                </section>
             </main>
         </div>
     </div>

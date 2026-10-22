@@ -497,6 +497,85 @@ select option:disabled {
     vertical-align: middle;
 }
 
+.admin-produtos-page {
+    max-width: 1200px;
+    padding: 2.25rem 2rem 3rem;
+}
+
+.produtos-listagem {
+    border-top: 1px solid var(--admin-line);
+    padding-top: 2rem;
+}
+
+.produtos-listagem__header {
+    margin-bottom: 1.25rem;
+}
+
+.produtos-listagem__header h2 {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.produtos-listagem__header p,
+.produtos-listagem__notice {
+    margin: 0.7rem 0 0;
+    color: var(--admin-text-soft);
+    font-size: 0.94rem;
+    line-height: 1.6;
+}
+
+.produtos-toolbar {
+    margin-bottom: 0;
+}
+
+.produtos-toolbar input:disabled,
+.produtos-toolbar select:disabled {
+    color: var(--admin-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.produtos-table {
+    min-width: 1040px;
+}
+
+.produtos-table tbody tr:hover {
+    background: transparent;
+}
+
+.produtos-state {
+    margin-top: 1.25rem;
+    border: 1px solid var(--admin-line);
+    background: rgba(255, 255, 255, 0.01);
+    padding: 1.25rem;
+    color: var(--admin-text-soft);
+    line-height: 1.7;
+}
+
+.produtos-state p {
+    margin: 0;
+}
+
+.produtos-state__eyebrow {
+    margin-bottom: 0.45rem !important;
+    color: var(--admin-muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.produtos-state--error {
+    border-color: rgba(255, 138, 101, 0.42);
+}
+
+.produtos-state--error .admin-button {
+    margin-top: 1rem;
+}
+
 .filamentos-table th {
     color: var(--admin-muted);
     font-size: 0.7rem;
@@ -1494,7 +1573,8 @@ select option:disabled {
     }
 
     .admin-config-page,
-    .admin-module {
+    .admin-module,
+    .admin-produtos-page {
         padding-left: 1.25rem;
         padding-right: 1.25rem;
     }
@@ -1502,9 +1582,19 @@ select option:disabled {
 
 @media (max-width: 640px) {
     .admin-page,
-    .admin-module {
+    .admin-module,
+    .admin-produtos-page {
         padding-left: 1.25rem;
         padding-right: 1.25rem;
+    }
+
+    .admin-header {
+        flex-wrap: wrap;
+    }
+
+    .admin-header .admin-button--header {
+        margin-left: 0;
+        width: 100%;
     }
 
     .printer-item__meta {
