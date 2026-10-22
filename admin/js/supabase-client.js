@@ -4,6 +4,9 @@
     window.RondySupabase = Object.freeze({
         getClient() {
             if (client) return client;
+            if (window.RondySupabaseConfigError) {
+                throw new Error(window.RondySupabaseConfigError);
+            }
             const config = window.RondySupabaseConfig || {};
             let url;
             try {

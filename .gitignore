@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 !.env.*.example
+admin/js/supabase-config.local.js
 
 # Logs and temporary files.
 *.log
