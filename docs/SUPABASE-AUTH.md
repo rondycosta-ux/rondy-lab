@@ -14,7 +14,7 @@ O SDK `@supabase/supabase-js` UMD, versão fixa `2.57.4`, é carregado por jsDel
 - O SDK persiste e renova a sessão. Eventos de logout em outra aba fecham o Admin. Ao retornar à aba ou restaurar a página pelo histórico, a sessão é conferida novamente. Destinos de login/logout são fixos e internos, sem parâmetro de redirecionamento externo.
 - O botão Sair fica na sidebar de todas as páginas protegidas; usa `signOut({ scope: 'local' })`, encerrando a sessão atual, não todas as sessões em outros dispositivos. Falha de logout é informada e permite tentar novamente.
 
-Rotas protegidas: `/admin/`, `/admin/configuracoes/`, `/admin/filamentos/`, `/admin/calculadora/`, `/admin/produtos/`, `/admin/pedidos/`, `/admin/estoque/` e `/admin/consignacao/`, incluindo seus `index.html`.
+Rotas protegidas: `/admin/`, `/admin/configuracoes/`, `/admin/filamentos/`, `/admin/calculadora/`, `/admin/produtos/`, `/admin/vitrines/`, `/admin/pedidos/`, `/admin/estoque/` e `/admin/consignacao/`, incluindo seus `index.html`.
 
 Para uma nova página administrativa, repetir o carregamento e o atributo `data-auth-page="protected"`, incluir o estado de verificação e aguardar `RondyAuth.ready` antes de inicializar o módulo. Login não usa o bloqueio de página privada, evitando loop.
 

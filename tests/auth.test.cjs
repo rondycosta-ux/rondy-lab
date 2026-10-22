@@ -119,14 +119,20 @@ test('cliente recusa secrets e configurações inseguras; cria singleton', () =>
     assert.equal(window.RondySupabase.getClient(), window.RondySupabase.getClient());
     assert.equal(count, 1);
 });
-test('oito rotas carregam auth antes dos módulos, e scripts aguardam sessão', () => {
-    const pages = ['', 'calculadora/', 'configuracoes/', 'filamentos/', 'produtos/', 'pedidos/', 'estoque/', 'consignacao/'];
+test('nove rotas carregam auth antes dos módulos, e scripts aguardam sessão', () => {
+    const pages = ['', 'calculadora/', 'configuracoes/', 'filamentos/', 'produtos/', 'vitrines/', 'pedidos/', 'estoque/', 'consignacao/'];
     for (const route of pages) {
         const html = read(`admin/${route}index.html`);
         assert.match(html, /data-auth-page="protected"/);
         assert.ok(html.indexOf('/admin/js/auth.js') < html.indexOf('/admin/js/admin.js'));
         assert.match(html, /\/admin\/css\/auth.css/);
+        assert.match(html, /href="\/admin\/vitrines\/"/);
     }
+    const vitrines = read('admin/vitrines/index.html');
+    assert.match(vitrines, /<a class="admin-nav__item is-active" href="\/admin\/vitrines\/">/);
+    assert.match(vitrines, /<h1 class="admin-header__title">VITRINES<\/h1>/);
+    assert.match(vitrines, /Módulo em desenvolvimento/);
+    assert.match(vitrines, /Em breve, você poderá criar vitrines personalizadas para apresentar produtos aos seus clientes\./);
     for (const module of ['js/admin.js', 'calculadora/calculadora.js', 'configuracoes/configuracoes.js', 'filamentos/filamentos.js']) {
         assert.match(read(`admin/${module}`), /await window.RondyAuth.ready/);
         new vm.Script(read(`admin/${module}`));

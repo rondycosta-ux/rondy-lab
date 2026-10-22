@@ -21,7 +21,7 @@ O Admin tem como objetivo centralizar a gestão operacional e comercial de um pe
 
 O site público apresenta a marca, o catálogo e os canais de contato. O Admin, em `/admin/`, é orientado à operação interna e possui estilos e scripts próprios. As páginas privadas exigem sessão Supabase válida; a autorização dos dados remotos depende de RLS, não da URL nem do guard visual.
 
-A sidebar apresenta, nesta ordem: Dashboard, Calculadora, Produtos, Pedidos, Estoque, Filamentos, Consignação e Configurações. Impressoras fica dentro de Configurações. Produção não possui página nem item próprio na navegação. A marca da sidebar leva ao Dashboard; a página ativa usa `.is-active` definida no HTML.
+A sidebar apresenta, nesta ordem: Dashboard, Calculadora, Produtos, Vitrines, Pedidos, Estoque, Filamentos, Consignação e Configurações. Impressoras fica dentro de Configurações. Produção não possui página nem item próprio na navegação. A marca da sidebar leva ao Dashboard; a página ativa usa `.is-active` definida no HTML.
 
 `admin/js/admin.js` controla somente a abertura e o fechamento da navegação em telas menores, com atualização de `aria-expanded`. Não é uma camada central de dados ou regras de negócio. Os módulos funcionais têm scripts próprios.
 
@@ -35,6 +35,7 @@ A sidebar apresenta, nesta ordem: Dashboard, Calculadora, Produtos, Pedidos, Est
 | Filamentos | Cadastro por rolo, saldo e movimentos | Leitura de dados próprios e cadastro inicial no Supabase; demais escritas ainda bloqueadas | Supabase/RLS; Calculadora ainda lê chave local legada | Integrar movimentações reais e compatibilizar a Calculadora |
 | Calculadora | Simular custos e preços, salvar histórico | Implementado | Configurações, Impressoras e Filamentos | Consolidar cálculos; vínculo com Produtos/Pedidos ainda indefinido |
 | Produtos | Organizar itens fabricados e comercializados | Placeholder | Nenhuma integração operacional atual | Cadastro e integração futura ao catálogo público |
+| Vitrines | Criar vitrines personalizadas para apresentar produtos | Placeholder | Nenhuma integração operacional atual | Definir estrutura e comportamento em etapa futura |
 | Pedidos | Acompanhar demandas de clientes | Placeholder | Dependências futuras com Produtos e Produção | Definir dados, estados e fluxo |
 | Produção | Registrar fabricação efetiva | Sem módulo independente | Dependências futuras com impressoras, materiais, pedidos e estoque | Definir consumo e conclusão de produção |
 | Estoque | Controlar produtos acabados | Placeholder | Dependências futuras com Produção, Venda e Consignação | Saldos e movimentações auditáveis |
