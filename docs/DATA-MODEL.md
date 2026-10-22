@@ -1,6 +1,8 @@
 # Rondy Lab — Modelo de dados
 
-> Atualização — o Admin possui autenticação Supabase. Filamentos consulta dados próprios e cadastra novos rolos no Supabase via RPC; outras escritas do módulo permanecem bloqueadas. A migration `003_user_roles.sql` prepara `public.user_roles`, mas ainda não foi aplicada e não altera o acesso atual. Os demais módulos continuam usando suas persistências locais. Consulte `docs/SUPABASE-AUTH.md` para bootstrap manual e limites.
+> Atualização — o Admin possui autenticação Supabase. Filamentos consulta dados próprios e cadastra novos rolos no Supabase via RPC; outras escritas do módulo permanecem bloqueadas. Produtos também consulta dados próprios e cadastra produtos pela RPC descrita neste documento. As migrations `003_user_roles.sql`, `005_precificacoes.sql` e `006_produtos.sql` estão aplicadas em homologação (`rondy-lab-dev`); não inferir desse fato o estado de produção. `public.user_roles` ainda não é consultada pelo frontend para conceder permissões adicionais. Os demais módulos continuam usando suas persistências locais. Consulte `docs/SUPABASE-AUTH.md` para bootstrap manual e limites.
+
+> Atualização — a configuração local opcional de Supabase permite que o Admin em `localhost`, `127.0.0.1` ou `[::1]` use `rondy-lab-dev` antes da inicialização do cliente. O override é ignorado fora desses hosts e, se estiver inválido, bloqueia a inicialização sem fallback silencioso para produção. A branch de desenvolvimento atual é `develop`.
 
 Referência técnica da implementação consultada em 7 de outubro de 2026. A fonte dos schemas é o JavaScript atual da árvore de trabalho, inclusive alterações locais já existentes. Nenhum dado real de navegador foi lido ou modificado. Descrever uma estrutura ou risco não significa aprovar mudanças de schema.
 
@@ -405,7 +407,7 @@ Não há unicidade garantida, histórico de alterações de cadastro, proteção
 | Consignação | Controlar envios, vendas e acertos | Quantidades entregues/remanescentes/vendidas, reposições, devoluções, preço, repasse e pagamentos | Lojistas, produtos e estoque | Apuração, negociação, acertos e permissões |
 | Vendas | Representar saída comercial | Itens, quantidades, valores e resultado | Estoque, pedidos e eventualmente consignação | Existência de módulo próprio, gatilhos, recebimentos e vínculo com acertos |
 
-Produtos, Pedidos, Estoque e Consignação têm páginas placeholder. Produção, Lojistas e Vendas não possuem modelos persistidos próprios no código analisado. Não criar chaves apenas para antecipar esse planejamento.
+Produtos possui listagem, busca, filtros e cadastro básico remoto; Vitrines possui apenas estrutura inicial. Pedidos, Estoque e Consignação têm páginas placeholder. Produção, Lojistas e Vendas não possuem modelos persistidos próprios no código analisado. Não criar chaves apenas para antecipar esse planejamento.
 
 ## 12. Migração futura para banco de dados
 
@@ -421,7 +423,7 @@ Considerações para uma migração futura, ainda não implementada nem definida
 - Definir versionamento de schemas, migrações verificáveis, política de backup/restauração e tratamento de falhas.
 - Definir sincronização entre dispositivos e estratégia de concorrência antes de permitir múltiplos escritores.
 
-Supabase é opção em avaliação, não decisão final ou dependência instalada. Não existe rotina de migração, sincronização ou importação remota no projeto atual.
+Supabase é uma dependência remota já utilizada por Auth, Filamentos e Produtos. Não existe rotina geral de migração, sincronização ou importação remota para os demais módulos locais.
 
 ## 13. Regras para futuras alterações de dados
 
@@ -691,7 +693,8 @@ As setas por ID não têm integridade referencial imposta.
 Snapshot é cópia histórica, não consulta dinâmica ao cadastro.
 Calculadora não grava saldo nem movimentos de filamentos.
 
-PLANEJADO — sem coleções ou integrações implementadas
+ESTRUTURA APLICADA EM HOMOLOGAÇÃO — migration 006 define Produtos e estoque por variação
+em `rondy-lab-dev`; ainda não foi aplicada em produção e não possui integração com o catálogo público.
 
 Calculadora → Produtos → Pedidos → Produção → Estoque de produtos acabados
                 └→ Catálogo público                    ├→ Venda
@@ -704,3 +707,105 @@ Contratos e cardinalidades desses vínculos futuros; gatilhos de baixa/entrada;
 relação produto/precificação; reservas; cancelamentos; acertos de consignação;
 modelo de Vendas; autenticação, permissões e persistência remota.
 ```
+
+## 16. Produtos e estoque remoto — migration 006
+
+**Estado:** `supabase/migrations/006_produtos.sql` está aplicada em homologação (`rondy-lab-dev`) e não em produção. No Admin, a listagem remota de produtos ativos exibe nome, tipo de atendimento, preço base, quantidade de variações e estoque total; também há busca por nome, filtro por tipo e cadastro básico exclusivamente pela RPC `criar_produto`. Esse fluxo foi validado manualmente em homologação. Edição, variações adicionais, movimentações de estoque e imagens ainda não têm interface. Não há integração com o catálogo público.
+
+### Tabelas e relacionamentos
+
+| Tabela | Conteúdo e integridade |
+| --- | --- |
+| `public.produtos` | Proprietário (`user_id`), nome, descrição, tipo de atendimento (`pronta_entrega` / `sob_encomenda`), `custo_base`, `preco_base`, arquivamento, timestamps e `precificacao_origem_id` opcional. Ambos os valores base são obrigatórios e não negativos; zero é um valor explícito. |
+| `public.produto_variacoes` | Variações de cor/tamanho, `user_id`, produto, overrides opcionais de custo/preço, estoque inteiro atual, arquivamento, variação interna padrão e timestamps. |
+| `public.produto_movimentacoes` | Histórico imutável por variação: `ENTRADA`, `SAIDA` ou `AJUSTE`, quantidade, saldo anterior/resultante, instante do servidor e observação. |
+| `public.produto_imagens` | Metadados de Storage: produto, variação opcional (máximo uma imagem por variação), bucket previsto, caminho, posição, capa, texto alternativo e data. Não cria bucket nem objetos. |
+
+Produtos referenciam `auth.users`; variações referenciam produto e proprietário em conjunto; movimentos referenciam variação e proprietário em conjunto; imagens referenciam produto/proprietário e, quando preenchida, variação/produto/proprietário em conjunto. Essas FKs compostas impedem associar linhas de contas diferentes. A referência opcional à precificação aponta para `precificacoes.id`, é validada pela RPC de criação contra o `auth.uid()` e vira `NULL` quando o histórico de origem é excluído.
+
+IDs são UUID. Produtos, variações, movimentos e imagens têm unicidade por ID; a combinação de cor e tamanho é única por produto sem diferenciar maiúsculas/minúsculas e normaliza `NULL` como texto vazio. Cada produto recebe inicialmente uma variação interna sem cor/tamanho. Ao adicionar a primeira variação identificada, o padrão é arquivado se não tiver estoque; se ainda possuir saldo, permanece ativo e interno para preservar essas unidades. Um gatilho de constraint diferido verifica a existência de ao menos uma variação ao fim da transação.
+
+### Custos, estoque e arquivamento
+
+- O custo e o preço efetivos de uma variação seguem `COALESCE(produto_variacoes.custo_unitario, produtos.custo_base)` e `COALESCE(produto_variacoes.preco_unitario, produtos.preco_base)`. Zero em uma variação é explícito; somente `NULL` herda. A origem na Calculadora é apenas referência: valores salvos no produto não acompanham alterações ou recálculos.
+- Estoque é um número inteiro de unidades e vive exclusivamente em `produto_variacoes.estoque_atual`; produtos sob encomenda não precisam de saldo positivo.
+- Entradas e saídas recebem quantidade inteira positiva. `AJUSTE` recebe o **novo saldo absoluto**, inclusive zero, seguindo a semântica da RPC de Filamentos. O histórico também conserva saldo anterior e resultante.
+- `registrar_movimentacao_produto` bloqueia a linha do produto e da variação, valida arquivamento/saldo, grava o movimento e atualiza o estoque na mesma transação. Uma saída que deixaria saldo negativo falha integralmente. Repetir o mesmo ID com o mesmo payload retorna a operação existente; reutilizá-lo com payload diferente falha.
+- Produto arquivado mantém variações, saldos, imagens e histórico, mas não aceita novas variações nem movimentos; é necessário desarquivá-lo antes. Para desarquivar um produto deve existir variação ativa. Uma variação somente pode ser arquivada com estoque zerado; enquanto o produto estiver ativo, deve permanecer ao menos uma variação ativa. Variações e movimentos não têm exclusão direta para usuários autenticados.
+- Excluir os metadados de uma imagem não remove o arquivo do Storage. Uma futura integração de upload deve coordenar a remoção do objeto e do registro e tratar falhas parciais.
+
+### Segurança e RPCs
+
+Todas as quatro tabelas habilitam RLS e as políticas restringem as linhas ao `user_id = auth.uid()`. `anon` e `PUBLIC` não recebem acesso. Privilégios são revogados e concedidos explicitamente a `authenticated`: consultas nas tabelas; atualizações somente dos campos editáveis de produto/variação; escrita dos metadados de imagem; sem escrita direta de estoque, histórico, propriedade, arquivamento ou timestamps. Criação de produto/variação e arquivamento passam pelas RPCs `SECURITY DEFINER`, que obtêm proprietário de `auth.uid()` e validam as referências.
+
+RPCs criadas: `criar_produto` (produto + variação padrão atômicos), `criar_variacao_produto`, `definir_arquivamento_produto`, `definir_arquivamento_variacao_produto` e `registrar_movimentacao_produto`. As permissões `EXECUTE` são revogadas de `PUBLIC`/`anon` e concedidas apenas a `authenticated`. Como as RPCs elevadas bypassam RLS, cada uma valida sessão e filtra referências pelo proprietário.
+
+Imagens usam o bucket futuro `produto-imagens` e caminho relativo `{user_id}/{produto_id}/...`; o banco valida esse prefixo, mas não valida a existência do objeto. O bucket privado e as políticas de `storage.objects` ficam para outra etapa.
+
+### Índices e validação disponível
+
+Há índices para produtos por proprietário/estado/data, variações por usuário/produto, histórico por proprietário/variação/data, imagens por produto/ordem e capa única por produto. Índices únicos também garantem a combinação de variação, um padrão por produto, um caminho de imagem, no máximo uma imagem por variação e no máximo uma capa.
+
+`supabase/tests/006_produtos_security.test.sql` contém verificações pgTAP de catálogos e execução: permissões efetivas, dois usuários com JWTs distintos, acesso anônimo, campos protegidos, criação e variação padrão, ownership da precificação e das imagens, movimentos, saldo negativo, idempotência e arquivamento. As 76 de 76 asserções passaram em homologação. O teste cria usuários e precificações fictícias dentro de uma transação e termina com `ROLLBACK`; deve ser executado somente em um banco de teste com privilégio para inserir fixtures em `auth.users` e assumir os roles `authenticated` e `anon`.
+
+### Executar os testes localmente
+
+O teste depende da extensão **pgTAP** habilitada no banco de teste e do runner `supabase test db`. O repositório atualmente não contém `supabase/config.toml`; a máquina de desenvolvimento também precisa do Supabase CLI e Docker. Em um checkout de desenvolvimento, configure o ambiente local (nunca conecte este fluxo a produção):
+
+```text
+supabase init                 # uma vez, se ainda não existir supabase/config.toml
+supabase start                # inicia o stack local via Docker
+supabase db reset             # destrutivo somente para o banco LOCAL; reaplica as migrations
+supabase test db              # executa os arquivos *.test.sql com pgTAP
+```
+
+Se pgTAP não estiver habilitado no banco local descartável, habilite a extensão nesse banco antes de executar os testes:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+```
+
+O conjunto de migrations versionadas no repositório não inicializa todas as tabelas legadas de Filamentos exigidas pelas migrations 001 e 002. Portanto, um `supabase db reset` limpo pode parar antes da 006 até que a estrutura-base de desenvolvimento seja provisionada de forma segura e reproduzível. Não use credenciais ou conexão de produção para contornar esse pré-requisito. Também não execute o script pgTAP contra dados reais: ele cria fixtures em `auth.users` e pressupõe permissões de teste.
+
+O teste é sequencial. **Não valida concorrência; essa validação continua pendente.** Para verificar concorrência em ambiente de desenvolvimento descartável, abra duas conexões `psql` independentes ao banco local, use um usuário fixture e uma variação ativa, e substitua os UUIDs de exemplo:
+
+```sql
+-- Sessao A: deixe a transacao aberta depois da chamada.
+BEGIN;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', '<USER_UUID>', true);
+SELECT set_config('request.jwt.claims',
+    '{"sub":"<USER_UUID>","role":"authenticated"}', true);
+SELECT public.registrar_movimentacao_produto(
+    '<MOVIMENTO_A_UUID>'::uuid, '<VARIACAO_UUID>'::uuid, 'ENTRADA', 5
+);
+-- Nao faca COMMIT ainda.
+```
+
+```sql
+-- Sessao B: execute enquanto A ainda mantem os locks; a chamada deve aguardar.
+BEGIN;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', '<USER_UUID>', true);
+SELECT set_config('request.jwt.claims',
+    '{"sub":"<USER_UUID>","role":"authenticated"}', true);
+SELECT public.registrar_movimentacao_produto(
+    '<MOVIMENTO_B_UUID>'::uuid, '<VARIACAO_UUID>'::uuid, 'ENTRADA', 3
+);
+-- Depois que A confirmar, B deve retornar saldo 8; entao confirme B.
+COMMIT;
+```
+
+Volte à sessão A e execute `COMMIT`; depois valide saldo 8 e duas linhas de histórico. Para a corrida entre movimentação e arquivamento de variação, repita com A registrando entrada positiva e B chamando `definir_arquivamento_variacao_produto(variacao, true)`: B deve aguardar e, após o commit de A, falhar por saldo positivo (`55000`). Se o arquivamento obtiver o lock primeiro, a movimentação posterior deve falhar por variação arquivada. Registre os resultados reais; não trate esta sequência documentada como execução já validada.
+
+### Decisões a aprovar antes de executar
+
+1. Confirmar unidades de estoque inteiras e ajuste definido como saldo final absoluto.
+2. Confirmar valores base de custo/preço obrigatórios, aceitando zero explícito.
+3. Confirmar a variação padrão interna e o tratamento do saldo existente ao cadastrar a primeira variação identificada.
+4. Confirmar que variações com saldo diferente de zero não podem ser arquivadas.
+5. Confirmar o identificador futuro do bucket `produto-imagens`, uma imagem por variação e a semântica de uma capa por produto.
+6. Revisar no projeto alvo a existência/estrutura de `public.precificacoes`, a versão do PostgreSQL, o role `postgres` com `SUPERUSER` ou `BYPASSRLS`, memberships/grants efetivos de `authenticated` e privilégios necessários de `service_role`.
+7. Preparar o stack local reproduzível com a estrutura-base legada, habilitar pgTAP e repetir a migration 006 e o arquivo de testes em banco descartável. As 76 asserções já passaram em homologação; confirmar novamente o isolamento com os dois usuários e a ausência de privilégios herdados indevidos ao montar esse fluxo local.
+8. Executar e registrar, em duas sessões simultâneas no banco de desenvolvimento, os testes de concorrência de movimentação e arquivamento descritos acima.
+9. Criar bucket e políticas do Storage em etapa separada, antes de habilitar upload. Não aplicar a migration em produção até concluir e revisar todas as validações acima.
