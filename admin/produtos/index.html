@@ -148,6 +148,53 @@
                     </form>
                 </section>
 
+                <section id="variacoes-panel" class="filamento-form-panel is-hidden" aria-labelledby="variacoes-title">
+                    <div class="filamento-form__header"><h2 id="variacoes-title">VARIAÇÕES</h2></div>
+                    <p id="variacoes-produto"></p>
+                    <p id="variacoes-message" class="admin-form-message" role="status" aria-live="polite"></p>
+                    <div class="table-responsive"><table class="filamentos-table">
+                        <caption class="sr-only">Variações do produto selecionado</caption>
+                        <thead><tr><th>Variação</th><th>Modelo</th><th>SKU</th><th>Cor</th><th>Tamanho</th><th>Custo</th><th>Preço</th><th>Estoque</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="variacoes-body"></tbody>
+                    </table></div>
+                    <section id="estoque-panel" class="is-hidden" aria-labelledby="estoque-title">
+                        <h3 id="estoque-title">ESTOQUE DA VARIAÇÃO</h3>
+                        <p id="estoque-variacao"></p>
+                        <p id="estoque-message" class="admin-form-message" role="status" aria-live="polite"></p>
+                        <form id="estoque-form">
+                            <div class="filamento-form__grid">
+                                <div class="config-field"><label for="estoque-tipo">Tipo</label><select id="estoque-tipo" name="tipo"><option value="ENTRADA">Entrada</option><option value="SAIDA">Saída</option><option value="AJUSTE">Ajuste de saldo</option></select></div>
+                                <div class="config-field"><label for="estoque-quantidade">Quantidade ou novo saldo</label><input id="estoque-quantidade" name="quantidade" type="number" min="0" max="2147483647" step="1" required></div>
+                                <div class="config-field config-field--full"><label for="estoque-observacao">Observação</label><textarea id="estoque-observacao" name="observacao"></textarea></div>
+                            </div>
+                            <p>Em ajuste, informe o saldo final desejado. Entrada e saída exigem quantidade positiva.</p>
+                            <div class="filamento-form__actions"><button id="estoque-submit" class="admin-button admin-button--primary" type="submit">REGISTRAR MOVIMENTAÇÃO</button><button id="estoque-fechar" class="admin-button" type="button">FECHAR ESTOQUE</button></div>
+                        </form>
+                        <h3>HISTÓRICO DE MOVIMENTAÇÕES</h3>
+                        <div class="table-responsive"><table class="filamentos-table"><caption class="sr-only">Histórico de estoque da variação</caption>
+                            <thead><tr><th>Data</th><th>Tipo</th><th>Quantidade / saldo ajustado</th><th>Observação</th></tr></thead>
+                            <tbody id="estoque-historico"></tbody>
+                        </table></div>
+                    </section>
+                    <form id="variacao-form">
+                        <h3 id="variacao-form-title">NOVA VARIAÇÃO</h3>
+                        <div class="filamento-form__grid">
+                            <div class="config-field"><label for="variacao-nome">Nome</label><input id="variacao-nome" name="nome" maxlength="100" required></div>
+                            <div class="config-field"><label for="variacao-modelo">Modelo</label><input id="variacao-modelo" name="modelo" maxlength="100"></div>
+                            <div class="config-field"><label for="variacao-sku">SKU</label><input id="variacao-sku" name="sku" maxlength="100"></div>
+                            <div class="config-field"><label for="variacao-cor">Cor</label><input id="variacao-cor" name="cor" maxlength="100"></div>
+                            <div class="config-field"><label for="variacao-tamanho">Tamanho</label><input id="variacao-tamanho" name="tamanho" maxlength="100"></div>
+                            <div class="config-field"><label for="variacao-custo">Custo próprio (opcional)</label><input id="variacao-custo" name="custo" type="number" min="0" step="0.01" placeholder="Herdar do produto"></div>
+                            <div class="config-field"><label for="variacao-preco">Preço próprio (opcional)</label><input id="variacao-preco" name="preco" type="number" min="0" step="0.01" placeholder="Herdar do produto"></div>
+                        </div>
+                        <div class="filamento-form__footer"><div class="filamento-form__actions">
+                            <button id="variacao-cancelar" type="button" class="admin-button admin-button--ghost">CANCELAR</button>
+                            <button id="variacao-salvar" type="submit" class="admin-button admin-button--primary">ADICIONAR VARIAÇÃO</button>
+                            <button id="variacoes-fechar" type="button" class="admin-button">FECHAR</button>
+                        </div></div>
+                    </form>
+                </section>
+
                 <section class="produtos-listagem" aria-labelledby="produtos-listagem-title">
                     <div class="produtos-listagem__header">
                         <div>

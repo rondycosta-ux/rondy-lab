@@ -19,6 +19,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const formTitle = document.getElementById('produto-form-title');
     const submitButton = document.getElementById('submit-produto-form');
     const cancelFormButton = document.getElementById('cancel-produto-form');
+    const variationsPanel = document.getElementById('variacoes-panel');
+    const variationsBody = document.getElementById('variacoes-body');
+    const variationsMessage = document.getElementById('variacoes-message');
+    const variationsProduct = document.getElementById('variacoes-produto');
+    const variationForm = document.getElementById('variacao-form');
+    const variationTitle = document.getElementById('variacao-form-title');
+    const variationSubmit = document.getElementById('variacao-salvar');
+    const stockPanel = document.getElementById('estoque-panel');
+    const stockForm = document.getElementById('estoque-form');
+    const stockMessage = document.getElementById('estoque-message');
+    const stockHistory = document.getElementById('estoque-historico');
+    const stockSubmit = document.getElementById('estoque-submit');
 
     let client;
     let authenticatedUserId = null;
@@ -27,6 +39,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     let creatingProduct = false;
     let draftProductId = null;
     let editingProductId = null;
+    let selectedProduct = null;
+    let editingVariationId = null;
+    let variationBusy = false;
+    let variationDraftId = null;
+    let stockVariation = null;
+    let stockBusy = false;
 
     setFiltersDisabled(true);
 
@@ -257,6 +275,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 form.elements.nome.focus();
             });
             actions.append(editButton);
+            const variationsButton = document.createElement('button');
+            variationsButton.type = 'button';
+            variationsButton.textContent = 'VARIAÇÕES';
+            variationsButton.addEventListener('click', () => {
+                if (variationBusy || creatingProduct || stockBusy) return;
+                stockPanel.classList.add('is-hidden');
+                stockVariation = null;
+                selectedProduct = produto;
+                variationsProduct.textContent = produto.nome;
+                variationsPanel.classList.remove('is-hidden');
+                resetVariationForm();
+                void loadVariations();
+            });
+            actions.append(variationsButton);
             actionsCell.append(actions);
             row.append(actionsCell);
 
@@ -338,6 +370,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             produtos = loadedProdutos;
+            if (selectedProduct) {
+                selectedProduct = loadedProdutos.find((produto) => produto.id === selectedProduct.id) || null;
+                if (selectedProduct) variationsProduct.textContent = selectedProduct.nome;
+                else variationsPanel.classList.add('is-hidden');
+            }
             dataLoaded = true;
             renderIndicators();
             renderProdutos();
@@ -434,6 +471,265 @@ document.addEventListener('DOMContentLoaded', async () => {
             openFormButton.disabled = !dataLoaded;
         }
     }
+
+    function variationNotice(message, error = false) {
+        variationsMessage.textContent = message;
+        variationsMessage.classList.toggle('is-error', error);
+        variationsMessage.setAttribute('role', error ? 'alert' : 'status');
+    }
+
+    function resetVariationForm() {
+        variationForm.reset();
+        editingVariationId = null;
+        variationDraftId = null;
+        variationTitle.textContent = 'NOVA VARIAÇÃO';
+        variationSubmit.textContent = 'ADICIONAR VARIAÇÃO';
+    }
+
+    function setVariationBusy(busy) {
+        variationBusy = busy;
+        variationForm.querySelectorAll('input, button').forEach((element) => { element.disabled = busy; });
+        variationsBody.querySelectorAll('button').forEach((element) => { element.disabled = busy; });
+    }
+
+    async function checkVariationUser() {
+        const { data, error } = await client.auth.getUser();
+        if (error) throw error;
+        if (!data?.user || data.user.is_anonymous || data.user.id !== authenticatedUserId) {
+            throw new Error('A sessão mudou. Recarregue a página.');
+        }
+    }
+
+    async function loadVariations(message = '') {
+        if (!selectedProduct) return;
+        setVariationBusy(true);
+        variationNotice('Carregando variações…');
+        try {
+            await checkVariationUser();
+            const rows = await fetchAllRows(() => client.from('produto_variacoes')
+                .select('id, user_id, produto_id, nome, modelo, sku, cor, tamanho, variacao_padrao, custo_unitario, preco_unitario, estoque_atual, arquivado')
+                .eq('user_id', authenticatedUserId).eq('produto_id', selectedProduct.id)
+                .order('criado_em', { ascending: true }).order('id', { ascending: true }));
+            await checkVariationUser();
+            const fragment = document.createDocumentFragment();
+            rows.forEach((v) => {
+                if (v.user_id !== authenticatedUserId || v.produto_id !== selectedProduct.id) throw new Error('Variação com propriedade inválida.');
+                const row = document.createElement('tr');
+                appendCell(row, v.variacao_padrao ? 'Padrão' : (v.nome || 'Sem nome'));
+                [v.modelo, v.sku, v.cor, v.tamanho].forEach((value) => appendCell(row, value || '—'));
+                appendCell(row, v.custo_unitario === null ? `Herdado (${formatCurrency(selectedProduct.custoBase)})` : formatCurrency(Number(v.custo_unitario)));
+                appendCell(row, v.preco_unitario === null ? `Herdado (${formatCurrency(selectedProduct.precoBase)})` : formatCurrency(Number(v.preco_unitario)));
+                appendCell(row, String(v.estoque_atual));
+                appendCell(row, v.arquivado ? 'Arquivada' : 'Ativa');
+                const actions = appendCell(row, '');
+                const stock = document.createElement('button');
+                stock.type = 'button'; stock.textContent = 'ESTOQUE';
+                stock.addEventListener('click', () => { void openStock(v); });
+                actions.append(stock);
+                if (!v.variacao_padrao && !v.arquivado) {
+                    const edit = document.createElement('button');
+                    edit.type = 'button'; edit.textContent = 'EDITAR';
+                    edit.addEventListener('click', () => {
+                        if (variationBusy || stockBusy) return;
+                        editingVariationId = v.id;
+                        variationDraftId = null;
+                        ['nome', 'modelo', 'sku', 'cor', 'tamanho'].forEach((name) => { variationForm.elements[name].value = v[name] || ''; });
+                        variationForm.elements.custo.value = v.custo_unitario ?? '';
+                        variationForm.elements.preco.value = v.preco_unitario ?? '';
+                        variationTitle.textContent = 'EDITAR VARIAÇÃO';
+                        variationSubmit.textContent = 'SALVAR ALTERAÇÕES';
+                        variationNotice('Edite a variação selecionada.');
+                        variationForm.elements.nome.focus();
+                    });
+                    actions.append(edit);
+                }
+                if (!v.variacao_padrao && !v.arquivado) {
+                    const archive = document.createElement('button');
+                    archive.type = 'button'; archive.textContent = 'ARQUIVAR';
+                    archive.addEventListener('click', () => { void archiveVariation(v); });
+                    actions.append(archive);
+                }
+                fragment.append(row);
+            });
+            variationsBody.replaceChildren(fragment);
+            variationNotice(message || 'Variações atualizadas.');
+        } catch (error) {
+            variationsBody.replaceChildren();
+            variationNotice(`Não foi possível carregar as variações. ${getErrorMessage(error)}`, true);
+        } finally { setVariationBusy(false); }
+    }
+
+    async function archiveVariation(variation) {
+        if (variationBusy || stockBusy || !window.confirm('Arquivar esta variação?')) return;
+        setVariationBusy(true);
+        try {
+            await checkVariationUser();
+            const { data, error } = await client.rpc('definir_arquivamento_variacao_produto', { p_variacao_id: variation.id, p_arquivado: true });
+            if (error) throw error;
+            if (data?.variacao_id !== variation.id || data.arquivado !== true) throw new Error('O arquivamento não foi confirmado.');
+            resetVariationForm();
+            await loadProdutos();
+            await loadVariations('Variação arquivada com sucesso.');
+        } catch (error) { variationNotice(`Não foi possível arquivar. ${getErrorMessage(error)}`, true); }
+        finally { setVariationBusy(false); }
+    }
+
+    variationForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (variationBusy || stockBusy || !selectedProduct || !variationForm.reportValidity()) return;
+        const fields = {};
+        for (const name of ['nome', 'modelo', 'sku', 'cor', 'tamanho']) fields[name] = variationForm.elements[name].value.trim() || null;
+        if (!fields.nome) { variationNotice('Informe o nome da variação.', true); return; }
+        for (const name of ['custo', 'preco']) {
+            const value = variationForm.elements[name].value.trim();
+            fields[name] = value === '' ? null : Number(value);
+            if (fields[name] !== null && (!Number.isFinite(fields[name]) || fields[name] < 0)) {
+                variationNotice('Informe valores monetários válidos e não negativos.', true); return;
+            }
+        }
+        setVariationBusy(true);
+        try {
+            await checkVariationUser();
+            if (editingVariationId) {
+                const { data, error } = await client.from('produto_variacoes').update({ nome: fields.nome, modelo: fields.modelo, sku: fields.sku, cor: fields.cor, tamanho: fields.tamanho, custo_unitario: fields.custo, preco_unitario: fields.preco })
+                    .eq('id', editingVariationId).eq('produto_id', selectedProduct.id).eq('user_id', authenticatedUserId).eq('variacao_padrao', false).eq('arquivado', false).select('id');
+                if (error) throw error;
+                if (!Array.isArray(data) || data.length !== 1 || data[0].id !== editingVariationId) throw new Error('A atualização não foi confirmada.');
+            } else {
+                if (!variationDraftId) variationDraftId = createDraftId();
+                const { data, error } = await client.rpc('criar_variacao_produto', { p_id: variationDraftId, p_produto_id: selectedProduct.id, p_nome: fields.nome, p_modelo: fields.modelo, p_sku: fields.sku, p_cor: fields.cor, p_tamanho: fields.tamanho, p_custo_unitario: fields.custo, p_preco_unitario: fields.preco });
+                if (error) throw error;
+                if (data?.variacao_id !== variationDraftId || data.produto_id !== selectedProduct.id) throw new Error('A criação não foi confirmada.');
+            }
+            await checkVariationUser();
+            resetVariationForm();
+            await loadProdutos();
+            await loadVariations('Variação salva com sucesso.');
+        } catch (error) { variationNotice(`Não foi possível confirmar o salvamento. ${getErrorMessage(error)} Atualize a listagem antes de tentar novamente.`, true); }
+        finally { setVariationBusy(false); }
+    });
+    document.getElementById('variacao-cancelar').addEventListener('click', () => { if (!variationBusy) { resetVariationForm(); variationNotice(''); } });
+    document.getElementById('variacoes-fechar').addEventListener('click', () => { if (!variationBusy && !stockBusy) { selectedProduct = null; stockVariation = null; stockPanel.classList.add('is-hidden'); resetVariationForm(); variationsPanel.classList.add('is-hidden'); } });
+
+    function stockNotice(message, error = false) {
+        stockMessage.textContent = message;
+        stockMessage.classList.toggle('is-error', error);
+        stockMessage.setAttribute('role', error ? 'alert' : 'status');
+    }
+
+    function pendingStockKey() { return `rondyLabProdutoMovimentoPendente:${authenticatedUserId}`; }
+
+    function readPendingStock() {
+        const raw = sessionStorage.getItem(pendingStockKey());
+        return raw ? JSON.parse(raw) : null;
+    }
+
+    function configureStockForm(pending) {
+        const retry = pending && stockVariation && pending.p_variacao_id === stockVariation.id;
+        if (retry) {
+            stockForm.elements.tipo.value = pending.p_tipo;
+            stockForm.elements.quantidade.value = pending.p_quantidade;
+            stockForm.elements.observacao.value = pending.p_observacao;
+        }
+        ['tipo', 'quantidade', 'observacao'].forEach((name) => { stockForm.elements[name].disabled = Boolean(pending) || stockBusy; });
+        stockSubmit.disabled = stockBusy || Boolean(stockVariation?.arquivado && !retry) || Boolean(pending && !retry);
+        stockSubmit.textContent = retry ? 'CONFIRMAR MOVIMENTAÇÃO PENDENTE' : 'REGISTRAR MOVIMENTAÇÃO';
+        document.getElementById('estoque-fechar').disabled = stockBusy;
+    }
+
+    async function loadStockHistory() {
+        await checkVariationUser();
+        const rows = await fetchAllRows(() => client.from('produto_movimentacoes')
+            .select('id, user_id, variacao_id, movimentado_em, tipo, quantidade, observacao')
+            .eq('user_id', authenticatedUserId).eq('variacao_id', stockVariation.id)
+            .order('movimentado_em', { ascending: false }).order('id', { ascending: false }));
+        await checkVariationUser();
+        const fragment = document.createDocumentFragment();
+        rows.forEach((row) => {
+            if (row.user_id !== authenticatedUserId || row.variacao_id !== stockVariation.id) throw new Error('Movimentação com propriedade inválida.');
+            const tr = document.createElement('tr');
+            const date = new Date(row.movimentado_em);
+            appendCell(tr, Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('pt-BR'));
+            appendCell(tr, row.tipo === 'SAIDA' ? 'SAÍDA' : row.tipo);
+            appendCell(tr, String(row.quantidade));
+            appendCell(tr, row.observacao || '—');
+            fragment.append(tr);
+        });
+        if (!rows.length) {
+            const tr = document.createElement('tr');
+            const cell = appendCell(tr, 'Nenhuma movimentação registrada.'); cell.colSpan = 4; fragment.append(tr);
+        }
+        stockHistory.replaceChildren(fragment);
+    }
+
+    async function openStock(variation) {
+        if (stockBusy || variationBusy) return;
+        stockVariation = variation;
+        stockForm.reset();
+        document.getElementById('estoque-variacao').textContent = `${variation.variacao_padrao ? 'Padrão' : (variation.nome || [variation.cor, variation.tamanho].filter(Boolean).join(' / ') || 'Sem nome')} — saldo: ${variation.estoque_atual}${variation.arquivado ? ' — arquivada' : ''}`;
+        stockPanel.classList.remove('is-hidden');
+        stockHistory.replaceChildren();
+        stockBusy = true;
+        try {
+            const pending = readPendingStock();
+            configureStockForm(pending);
+            stockNotice('Carregando histórico…');
+            await loadStockHistory();
+            stockNotice(pending ? (pending.p_variacao_id === variation.id ? 'Há uma movimentação pendente. Confirme-a para verificar o resultado sem duplicar o registro.' : 'Há uma movimentação pendente em outra variação. Confirme-a antes de registrar outra.') : (variation.arquivado ? 'Variação arquivada: novas movimentações estão bloqueadas.' : 'Histórico atualizado.'));
+        } catch (error) { stockNotice(`Não foi possível carregar o histórico. ${getErrorMessage(error)}`, true); }
+        finally {
+            stockBusy = false;
+            try { configureStockForm(readPendingStock()); } catch (error) { stockSubmit.disabled = true; stockNotice('Não foi possível acessar a operação pendente nesta sessão.', true); }
+        }
+    }
+
+    stockForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (stockBusy || variationBusy || !stockVariation || !selectedProduct) return;
+        let pending;
+        let confirmed = false;
+        try {
+            pending = readPendingStock();
+            if (pending && pending.p_variacao_id !== stockVariation.id) throw new Error('Confirme a movimentação pendente da outra variação.');
+            if (!pending) {
+                if (!stockForm.reportValidity()) return;
+                const tipo = stockForm.elements.tipo.value;
+                const raw = stockForm.elements.quantidade.value.trim();
+                const quantidade = Number(raw);
+                if (!['ENTRADA', 'SAIDA', 'AJUSTE'].includes(tipo) || !raw || !Number.isInteger(quantidade) || quantidade < 0 || quantidade > 2147483647 || (tipo !== 'AJUSTE' && quantidade === 0)) throw new Error('Informe uma quantidade inteira válida; entrada e saída devem ser positivas.');
+                pending = { p_id: createDraftId(), p_variacao_id: stockVariation.id, p_tipo: tipo, p_quantidade: quantidade, p_observacao: stockForm.elements.observacao.value };
+                sessionStorage.setItem(pendingStockKey(), JSON.stringify(pending));
+            }
+            stockBusy = true;
+            configureStockForm(pending);
+            stockNotice('Registrando movimentação…');
+            await checkVariationUser();
+            const { data, error } = await client.rpc('registrar_movimentacao_produto', pending);
+            if (error) {
+                if (typeof error.code === 'string' && /^[235][0-9A-Z]{4}$/.test(error.code)) sessionStorage.removeItem(pendingStockKey());
+                throw error;
+            }
+            if (data?.id !== pending.p_id || data.variacao_id !== pending.p_variacao_id || data.tipo !== pending.p_tipo || data.quantidade !== pending.p_quantidade) throw new Error('A resposta não confirmou a movimentação.');
+            await checkVariationUser();
+            sessionStorage.removeItem(pendingStockKey());
+            confirmed = true;
+            stockForm.reset();
+            await loadProdutos();
+            await loadVariations();
+            const { data: refreshed, error: refreshError } = await client.from('produto_variacoes').select('estoque_atual, arquivado').eq('id', stockVariation.id).eq('produto_id', selectedProduct.id).eq('user_id', authenticatedUserId).single();
+            if (refreshError) throw refreshError;
+            stockVariation.estoque_atual = refreshed.estoque_atual;
+            stockVariation.arquivado = refreshed.arquivado;
+            document.getElementById('estoque-variacao').textContent = `Saldo atual: ${refreshed.estoque_atual}`;
+            await loadStockHistory();
+            stockNotice('Movimentação registrada com sucesso.');
+        } catch (error) { stockNotice(confirmed ? `Movimentação registrada, mas não foi possível atualizar a tela. ${getErrorMessage(error)} Reabra o estoque para consultar o resultado.` : `Não foi possível concluir. ${getErrorMessage(error)} Se houver operação pendente, confirme-a antes de registrar outra.`, true); }
+        finally {
+            stockBusy = false;
+            try { configureStockForm(readPendingStock()); } catch (error) { stockSubmit.disabled = true; stockNotice('Não foi possível acessar a operação pendente nesta sessão.', true); }
+        }
+    });
+    document.getElementById('estoque-fechar').addEventListener('click', () => { if (!stockBusy) { stockPanel.classList.add('is-hidden'); stockVariation = null; } });
 
     searchInput.addEventListener('input', renderProdutos);
     typeFilter.addEventListener('change', renderProdutos);
