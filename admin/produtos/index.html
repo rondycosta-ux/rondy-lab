@@ -15,6 +15,7 @@
     <script src="/admin/js/auth.js" defer></script>
     <script src="/admin/js/admin.js" defer></script>
     <script src="/admin/produtos/produtos.js" defer></script>
+    <script src="/admin/produtos/imagens.js" defer></script>
 </head>
 <body data-auth-page="protected">
     <section class="auth-gate" aria-label="Verificação de acesso">
@@ -146,6 +147,21 @@
                             </div>
                         </div>
                     </form>
+                </section>
+
+                <section id="imagens-panel" class="filamento-form-panel is-hidden" aria-labelledby="imagens-title">
+                    <div class="filamento-form__header"><h2 id="imagens-title">IMAGENS DO PRODUTO</h2></div>
+                    <p id="imagens-produto"></p>
+                    <p id="imagens-mensagem" class="admin-form-message" role="status" aria-live="polite"></p>
+                    <form id="imagens-form">
+                        <div class="config-field"><label for="imagens-arquivos">Imagens JPG, PNG ou WebP (até 5 MB cada)</label>
+                            <input id="imagens-arquivos" type="file" accept="image/jpeg,image/png,image/webp" multiple required></div>
+                        <div class="filamento-form__actions">
+                            <button id="imagens-enviar" class="admin-button admin-button--primary" type="submit">ADICIONAR IMAGENS</button>
+                            <button id="imagens-fechar" class="admin-button" type="button">FECHAR</button>
+                        </div>
+                    </form>
+                    <div id="imagens-galeria" class="produto-galeria"></div>
                 </section>
 
                 <section id="variacoes-panel" class="filamento-form-panel is-hidden" aria-labelledby="variacoes-title">

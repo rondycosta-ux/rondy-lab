@@ -538,6 +538,32 @@ select option:disabled {
     opacity: 0.7;
 }
 
+.produto-lista-capa {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    vertical-align: middle;
+    margin-right: 12px;
+}
+
+.produto-galeria {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.produto-galeria__item img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+.produto-galeria__item .filamento-actions {
+    flex-wrap: wrap;
+}
+
 .produtos-table {
     min-width: 1040px;
 }

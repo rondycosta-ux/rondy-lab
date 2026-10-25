@@ -240,7 +240,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const variacoesAtivas = produto.variacoes.length;
             const estoqueTotal = produto.variacoes.reduce((total, variacao) => total + variacao.estoqueAtual, 0);
 
-            appendCell(row, produto.nome);
+            const productCell = appendCell(row, '');
+            const cover = document.createElement('img');
+            cover.className = 'produto-lista-capa is-hidden';
+            cover.alt = '';
+            cover.dataset.produtoCapa = produto.id;
+            const productName = document.createElement('span');
+            productName.textContent = produto.nome;
+            productCell.append(cover, productName);
             appendCell(row, typeLabel(produto.tipoAtendimento));
             appendCell(row, formatCurrency(produto.precoBase));
             appendCell(row, String(variacoesAtivas));
@@ -275,6 +282,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 form.elements.nome.focus();
             });
             actions.append(editButton);
+            const imagesButton = document.createElement('button');
+            imagesButton.type = 'button';
+            imagesButton.textContent = 'IMAGENS';
+            imagesButton.addEventListener('click', () => {
+                document.dispatchEvent(new CustomEvent('rondy:abrir-imagens', { detail: { id: produto.id, nome: produto.nome } }));
+            });
+            actions.append(imagesButton);
             const variationsButton = document.createElement('button');
             variationsButton.type = 'button';
             variationsButton.textContent = 'VARIAÇÕES';
@@ -296,6 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         tableBody.replaceChildren(fragment);
+        document.dispatchEvent(new Event('rondy:produtos-renderizados'));
     }
 
     function renderIndicators() {
