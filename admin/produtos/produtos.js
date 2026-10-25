@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const formPanel = document.getElementById('produto-form-panel');
     const form = document.getElementById('produto-form');
     const formMessage = document.getElementById('produto-form-message');
+    const formTitle = document.getElementById('produto-form-title');
+    const submitButton = document.getElementById('submit-produto-form');
     const cancelFormButton = document.getElementById('cancel-produto-form');
 
     let client;
@@ -24,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let dataLoaded = false;
     let creatingProduct = false;
     let draftProductId = null;
+    let editingProductId = null;
 
     setFiltersDisabled(true);
 
@@ -69,6 +72,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (creatingProduct) return;
         form.reset();
         draftProductId = null;
+        editingProductId = null;
+        formTitle.textContent = 'NOVO PRODUTO';
+        submitButton.textContent = 'SALVAR PRODUTO';
         setFormMessage('Preencha os dados para cadastrar um novo produto.');
         formPanel.classList.add('is-hidden');
     }
@@ -135,18 +141,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function mapProduto(row) {
         if (!row || row.user_id !== authenticatedUserId || typeof row.id !== 'string'
-            || typeof row.nome !== 'string' || !['pronta_entrega', 'sob_encomenda'].includes(row.tipo_atendimento)) {
+            || typeof row.nome !== 'string' || typeof row.descricao !== 'string' || !['pronta_entrega', 'sob_encomenda'].includes(row.tipo_atendimento)) {
             throw new Error('A consulta retornou um produto com dados inválidos.');
         }
 
+        const custoBase = Number(row.custo_base);
         const precoBase = Number(row.preco_base);
-        if (!Number.isFinite(precoBase) || precoBase < 0) {
-            throw new Error('A consulta retornou um preço base inválido.');
+        if (!Number.isFinite(custoBase) || custoBase < 0 || !Number.isFinite(precoBase) || precoBase < 0) {
+            throw new Error('A consulta retornou um valor base inválido.');
         }
 
         return {
             id: row.id,
             nome: row.nome,
+            descricao: row.descricao,
+            custoBase,
             tipoAtendimento: row.tipo_atendimento,
             precoBase,
             variacoes: []
@@ -231,9 +240,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             actions.className = 'filamento-actions';
             const editButton = document.createElement('button');
             editButton.type = 'button';
-            editButton.disabled = true;
-            editButton.title = 'A edição de produtos será disponibilizada em uma próxima etapa.';
-            editButton.textContent = 'EDITAR — EM BREVE';
+            editButton.textContent = 'EDITAR';
+            editButton.addEventListener('click', () => {
+                if (!dataLoaded || creatingProduct) return;
+                editingProductId = produto.id;
+                draftProductId = null;
+                form.elements.nome.value = produto.nome;
+                form.elements.descricao.value = produto.descricao;
+                form.elements.tipoAtendimento.value = produto.tipoAtendimento;
+                form.elements.custoBase.value = produto.custoBase;
+                form.elements.precoBase.value = produto.precoBase;
+                formTitle.textContent = 'EDITAR PRODUTO';
+                submitButton.textContent = 'SALVAR ALTERAÇÕES';
+                setFormMessage('Edite os dados do produto selecionado.');
+                formPanel.classList.remove('is-hidden');
+                form.elements.nome.focus();
+            });
             actions.append(editButton);
             actionsCell.append(actions);
             row.append(actionsCell);
@@ -281,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const produtoRows = await fetchAllRows(() => client
                 .from('produtos')
-                .select('id, user_id, nome, tipo_atendimento, preco_base')
+                .select('id, user_id, nome, descricao, tipo_atendimento, custo_base, preco_base')
                 .eq('user_id', authenticatedUserId)
                 .eq('arquivado', false)
                 .order('criado_em', { ascending: false })
@@ -342,12 +364,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         let values;
         try {
             values = getFormValues();
-            if (!draftProductId) draftProductId = createDraftId();
+            if (!editingProductId && !draftProductId) draftProductId = createDraftId();
         } catch (error) {
             setFormMessage(getErrorMessage(error), true);
             return;
         }
 
+        const isEditing = editingProductId !== null;
         creatingProduct = true;
         setFormControlsDisabled(true);
         openFormButton.disabled = true;
@@ -357,35 +380,54 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { data: userData, error: userError } = await client.auth.getUser();
             if (userError) throw userError;
             if (!userData?.user || userData.user.is_anonymous || userData.user.id !== authenticatedUserId) {
-                throw new Error('A sessão mudou. Recarregue a página antes de cadastrar o produto.');
+                throw new Error('A sessão mudou. Recarregue a página antes de salvar o produto.');
             }
 
-            const { data, error } = await client.rpc('criar_produto', {
-                p_id: draftProductId,
-                p_nome: values.nome,
-                p_descricao: values.descricao,
-                p_tipo_atendimento: values.tipoAtendimento,
-                p_custo_base: values.custoBase,
-                p_preco_base: values.precoBase
-            });
-            if (error) throw error;
-            if (!data || data.produto_id !== draftProductId || typeof data.variacao_padrao_id !== 'string') {
-                throw new Error('O Supabase não confirmou a criação do produto e da variação padrão.');
+            if (isEditing) {
+                const { data, error } = await client.from('produtos')
+                    .update({
+                        nome: values.nome,
+                        descricao: values.descricao,
+                        tipo_atendimento: values.tipoAtendimento,
+                        custo_base: values.custoBase,
+                        preco_base: values.precoBase
+                    })
+                    .eq('id', editingProductId)
+                    .eq('user_id', authenticatedUserId)
+                    .eq('arquivado', false)
+                    .select('id');
+                if (error) throw error;
+                if (!Array.isArray(data) || data.length !== 1 || data[0].id !== editingProductId) {
+                    throw new Error('O produto não foi atualizado: não foi encontrado ou não está disponível para esta conta.');
+                }
+            } else {
+                const { data, error } = await client.rpc('criar_produto', {
+                    p_id: draftProductId,
+                    p_nome: values.nome,
+                    p_descricao: values.descricao,
+                    p_tipo_atendimento: values.tipoAtendimento,
+                    p_custo_base: values.custoBase,
+                    p_preco_base: values.precoBase
+                });
+                if (error) throw error;
+                if (!data || data.produto_id !== draftProductId || typeof data.variacao_padrao_id !== 'string') {
+                    throw new Error('O Supabase não confirmou a criação do produto e da variação padrão.');
+                }
             }
 
             const { data: confirmedUserData, error: confirmedUserError } = await client.auth.getUser();
             if (confirmedUserError) throw confirmedUserError;
             if (!confirmedUserData?.user || confirmedUserData.user.id !== authenticatedUserId) {
-                throw new Error('A sessão mudou durante o cadastro. Recarregue a página para confirmar o resultado.');
+                throw new Error('A sessão mudou durante o salvamento. Recarregue a página para confirmar o resultado.');
             }
 
             creatingProduct = false;
             setFormControlsDisabled(false);
             resetAndHideForm();
-            await loadProdutos('Produto cadastrado com sucesso. A variação padrão foi criada automaticamente.');
+            await loadProdutos(isEditing ? 'Produto atualizado com sucesso.' : 'Produto cadastrado com sucesso. A variação padrão foi criada automaticamente.');
         } catch (error) {
-            console.error('Não foi possível cadastrar o produto no Supabase:', error);
-            setFormMessage(`Não foi possível cadastrar o produto. ${getErrorMessage(error)}`, true);
+            console.error('Não foi possível salvar o produto no Supabase:', error);
+            setFormMessage(`Não foi possível salvar o produto. ${getErrorMessage(error)}`, true);
         } finally {
             creatingProduct = false;
             setFormControlsDisabled(false);
@@ -398,9 +440,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     retryLoadButton.addEventListener('click', () => { void loadProdutos(); });
     openFormButton.addEventListener('click', () => {
         if (!dataLoaded || creatingProduct) return;
-        form.reset();
-        draftProductId = null;
-        setFormMessage('Preencha os dados para cadastrar um novo produto.');
+        resetAndHideForm();
         formPanel.classList.remove('is-hidden');
         form.elements.nome.focus();
     });
