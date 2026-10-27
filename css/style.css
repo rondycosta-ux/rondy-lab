@@ -160,6 +160,20 @@ img {
     transform: rotate(-45deg);
 }
 
+/* Vitrine pública */
+.public-vitrine { max-width: 1200px; margin: 0 auto; padding: 5rem 2rem 6rem; }
+.public-vitrine__intro { max-width: 760px; margin-bottom: 3rem; }
+.public-vitrine__description { margin: 1.4rem 0 0; color: rgba(255,255,255,.78); font-size: 1.12rem; line-height: 1.7; }
+.public-vitrine__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; }
+.public-vitrine__product { min-width: 0; border: 1px solid var(--line); background: var(--bg-soft); }
+.public-vitrine__image { width: 100%; height: 320px; object-fit: cover; background: #1a1a1a; }
+.public-vitrine__image.is-missing { min-height: 320px; background: #1a1a1a; }
+.public-vitrine__product-body { padding: 1.2rem; }.public-vitrine__product h2 { margin: 0; font-size: 1.45rem; line-height: 1.15; letter-spacing: -.04em; }.public-vitrine__product p { min-height: 4.7em; margin: .85rem 0; color: rgba(255,255,255,.7); line-height: 1.55; }.public-vitrine__product strong { display: block; margin-bottom: 1.1rem; color: var(--accent); font-size: 1.12rem; }.public-vitrine__product .btn { width: 100%; min-height: 46px; padding: .75rem; font-size: .68rem; }
+.public-vitrine__catalog { display: inline-block; margin-top: 3rem; color: var(--accent); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.public-vitrine__state { max-width: 620px; min-height: 52vh; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }.public-vitrine__state h1 { margin: 0; font-size: clamp(2.5rem, 6vw, 5rem); letter-spacing: -.06em; text-transform: uppercase; }.public-vitrine__state p { margin: 1rem 0 1.8rem; color: var(--muted); font-size: 1.05rem; line-height: 1.6; }
+@media (max-width: 900px) { .public-vitrine__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .public-vitrine { padding: 3rem 1.25rem 4rem; }.public-vitrine__grid { grid-template-columns: 1fr; }.public-vitrine__image { height: 280px; } }
+
 .hero {
     max-width: 1200px;
     margin: 0 auto;

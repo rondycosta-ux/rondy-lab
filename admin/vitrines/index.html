@@ -14,6 +14,7 @@
     <script src="/admin/js/supabase-client.js" defer></script>
     <script src="/admin/js/auth.js" defer></script>
     <script src="/admin/js/admin.js" defer></script>
+    <script src="/admin/vitrines/vitrines.js" defer></script>
 </head>
 <body data-auth-page="protected">
     <section class="auth-gate" aria-label="Verificação de acesso">
@@ -89,6 +90,28 @@
                     <p>Em breve, você poderá criar vitrines personalizadas para apresentar produtos aos seus clientes.</p>
                 </div>
             </main>
+            <section id="vitrine-form-panel" class="filamento-form-panel is-hidden" aria-labelledby="vitrine-form-title">
+                <div class="filamento-form__header"><h2 id="vitrine-form-title">NOVA VITRINE</h2></div>
+                <form id="vitrine-form">
+                    <div class="filamento-form__grid">
+                        <div class="config-field"><label for="vitrine-nome">Nome da vitrine</label><input id="vitrine-nome" name="nome" type="text" minlength="1" maxlength="200" required autocomplete="off"></div>
+                        <div class="config-field"><label for="vitrine-cliente">Cliente ou empresa</label><input id="vitrine-cliente" name="cliente" type="text" minlength="1" maxlength="200" required autocomplete="off"></div>
+                        <div class="config-field config-field--full"><label for="vitrine-descricao">Descrição</label><textarea id="vitrine-descricao" name="descricao" maxlength="2000" placeholder="Opcional"></textarea></div>
+                        <div class="config-field"><label for="vitrine-slug">Link exclusivo</label><div class="vitrine-slug-field"><span>/v/</span><input id="vitrine-slug" name="slug" type="text" minlength="3" maxlength="120" required autocomplete="off" spellcheck="false" pattern="[a-z0-9]+(-[a-z0-9]+)*"></div><p class="config-field__description">Use letras minúsculas, números e hífens.</p></div>
+                        <label class="toggle-pill vitrine-active-toggle"><input id="vitrine-ativa" name="ativa" type="checkbox" checked> Vitrine ativa</label>
+                    </div>
+                    <section class="vitrine-products" aria-labelledby="vitrine-products-title">
+                        <div class="vitrine-products__header"><h3 id="vitrine-products-title">Produtos selecionados</h3><p>Selecione produtos ativos e defina a ordem de exibição.</p></div>
+                        <div id="vitrine-selected-products" class="vitrine-selected-products" aria-live="polite"></div>
+                        <div class="vitrine-products__available"><label for="vitrine-product-search">Adicionar produtos ativos</label><input id="vitrine-product-search" type="search" placeholder="Buscar produto" autocomplete="off"><div id="vitrine-product-options" class="vitrine-product-options"></div></div>
+                    </section>
+                    <div class="filamento-form__footer"><div id="vitrine-form-message" class="admin-form-message" aria-live="polite"></div><div class="filamento-form__actions"><button id="vitrine-cancelar" type="button" class="admin-button admin-button--ghost">CANCELAR</button><button id="vitrine-salvar" type="submit" class="admin-button admin-button--primary">SALVAR VITRINE</button></div></div>
+                </form>
+            </section>
+            <section class="vitrine-list-section" aria-labelledby="vitrine-list-title">
+                <div class="config-section__header"><h2 id="vitrine-list-title">Vitrines cadastradas</h2><p id="vitrine-list-message" class="admin-form-message" aria-live="polite">Carregando vitrines…</p></div>
+                <div id="vitrine-list" class="vitrine-list"></div>
+            </section>
         </div>
     </div>
 </body>
