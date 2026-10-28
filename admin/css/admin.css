@@ -1029,6 +1029,10 @@ select option:disabled {
 
 /* Vitrines */
 body:has(#vitrine-form-panel) .admin-module { display: none; }
+body:has(#estoque-app) .admin-module { display: none; }
+.estoque-page { max-width: 1200px; padding: 2.25rem 2rem 3rem; }
+.estoque-controls { margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }.estoque-controls > input { min-height: 46px; min-width: 260px; padding: .7rem .85rem; border: 1px solid var(--admin-line); background: transparent; color: var(--admin-text); font: inherit; }.estoque-filters { display: flex; gap: .45rem; flex-wrap: wrap; }.estoque-filters button, #estoque-lista button { border: 1px solid var(--admin-line); background: transparent; color: var(--admin-text); padding: .55rem .7rem; font-size: .68rem; letter-spacing: .1em; cursor: pointer; }.estoque-filters button.is-active { border-color: var(--admin-accent); color: var(--admin-accent); }.estoque-section { margin-top: 2rem; border-top: 1px solid var(--admin-line); padding-top: 1.5rem; }.estoque-section h2 { margin: 0; color: var(--admin-text-soft); font-size: .8rem; letter-spacing: .15em; text-transform: uppercase; }.estoque-form-product { color: var(--admin-text-soft); }.admin-table-wrap { overflow-x: auto; margin-top: 1rem; }.admin-table-wrap table { width: 100%; border-collapse: collapse; min-width: 760px; }.admin-table-wrap th, .admin-table-wrap td { padding: .8rem; border-bottom: 1px solid var(--admin-line); text-align: left; font-size: .85rem; }.admin-table-wrap th { color: var(--admin-muted); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }
+@media (max-width: 980px) { .estoque-page { padding-left: 1.25rem; padding-right: 1.25rem; } }
 .vitrine-list-section,
 #vitrine-form-panel { max-width: 1200px; margin: 2rem 2rem 0; }
 .vitrine-list-section { border-top: 1px solid var(--admin-line); padding-top: 2rem; padding-bottom: 3rem; }

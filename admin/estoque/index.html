@@ -14,6 +14,7 @@
     <script src="/admin/js/supabase-client.js" defer></script>
     <script src="/admin/js/auth.js" defer></script>
     <script src="/admin/js/admin.js" defer></script>
+    <script src="/admin/estoque/estoque.js" defer></script>
 </head>
 <body data-auth-page="protected">
     <section class="auth-gate" aria-label="Verificação de acesso">
@@ -88,6 +89,13 @@
                     <p class="admin-module__status">Módulo em desenvolvimento.</p>
                 </div>
             </main>
+            <section id="estoque-app" class="estoque-page">
+                <section class="compact-indicators" aria-label="Resumo do estoque"><article class="compact-indicator"><span class="compact-indicator__label">Peças disponíveis</span><strong id="estoque-total" class="compact-indicator__value">—</strong></article><article class="compact-indicator"><span class="compact-indicator__label">Variações zeradas</span><strong id="estoque-zerado" class="compact-indicator__value">—</strong></article><article class="compact-indicator"><span class="compact-indicator__label">Estoque baixo</span><strong id="estoque-baixo" class="compact-indicator__value">—</strong></article></section>
+                <section class="estoque-controls"><input id="estoque-busca" type="search" placeholder="Buscar produto, modelo ou SKU"><div id="estoque-filtros" class="estoque-filters"><button data-filter="todos" type="button" class="is-active">TODOS</button><button data-filter="com-estoque" type="button">COM ESTOQUE</button><button data-filter="zerados" type="button">ZERADOS</button><button data-filter="baixo" type="button">ESTOQUE BAIXO</button></div></section>
+                <section class="estoque-section"><h2>Saldo por variação</h2><p id="estoque-mensagem" class="admin-form-message" aria-live="polite"></p><div class="admin-table-wrap"><table><thead><tr><th>Produto</th><th>Variação</th><th>Modelo / SKU</th><th>Saldo</th><th>Mínimo</th><th>Ações</th></tr></thead><tbody id="estoque-lista"></tbody></table></div></section>
+                <section id="estoque-form-panel" class="filamento-form-panel is-hidden"><div class="filamento-form__header"><h2 id="estoque-form-title">MOVIMENTAR ESTOQUE</h2></div><form id="estoque-form"><p id="estoque-variacao" class="estoque-form-product"></p><div class="filamento-form__grid"><div class="config-field"><label for="estoque-tipo">Tipo</label><select id="estoque-tipo" name="tipo"><option value="ENTRADA">Entrada</option><option value="SAIDA">Saída</option><option value="AJUSTE">Ajuste de saldo</option></select></div><div class="config-field"><label for="estoque-quantidade">Quantidade</label><input id="estoque-quantidade" name="quantidade" type="number" min="0" step="1" required></div><div class="config-field config-field--full"><label for="estoque-observacao">Observação</label><input id="estoque-observacao" name="observacao" maxlength="500"></div></div><div class="filamento-form__footer"><p id="estoque-form-mensagem" class="admin-form-message" aria-live="polite"></p><div class="filamento-form__actions"><button id="estoque-cancelar" type="button" class="admin-button admin-button--ghost">CANCELAR</button><button type="submit" class="admin-button admin-button--primary">REGISTRAR</button></div></div></form></section>
+                <section class="estoque-section"><h2>Histórico geral</h2><div class="admin-table-wrap"><table><thead><tr><th>Data</th><th>Produto</th><th>Variação</th><th>Tipo</th><th>Quantidade</th><th>Observação</th></tr></thead><tbody id="estoque-historico"></tbody></table></div></section>
+            </section>
         </div>
     </div>
 </body>
