@@ -14,6 +14,7 @@
     <script src="/admin/js/supabase-client.js" defer></script>
     <script src="/admin/js/auth.js" defer></script>
     <script src="/admin/js/admin.js" defer></script>
+    <script src="/admin/consignacao/consignacao.js" defer></script>
 </head>
 <body data-auth-page="protected">
     <section class="auth-gate" aria-label="Verificação de acesso">
@@ -88,6 +89,78 @@
                     <p class="admin-module__status">Módulo em desenvolvimento.</p>
                 </div>
             </main>
+            <section id="consignacao-app" class="consignacao-page">
+                <section class="compact-indicators"><article class="compact-indicator"><span class="compact-indicator__label">Estabelecimentos ativos</span><strong id="consignacao-ativos" class="compact-indicator__value">—</strong></article></section>
+                <div class="consignacao-toolbar"><input id="consignacao-busca" type="search" placeholder="Buscar estabelecimento"><button id="consignacao-novo" type="button" class="admin-button admin-button--primary">NOVO ESTABELECIMENTO</button></div>
+                <section id="consignacao-form-panel" class="filamento-form-panel is-hidden"><div class="filamento-form__header"><h2 id="consignacao-form-title">NOVO ESTABELECIMENTO</h2></div><form id="consignacao-form"><div class="filamento-form__grid"><div class="config-field"><label for="consignacao-nome">Nome</label><input id="consignacao-nome" name="nome" required maxlength="200"></div><div class="config-field"><label for="consignacao-responsavel">Responsável</label><input id="consignacao-responsavel" name="responsavel" maxlength="200"></div><div class="config-field"><label for="consignacao-whatsapp">WhatsApp</label><input id="consignacao-whatsapp" name="whatsapp" maxlength="30"></div><div class="config-field"><label for="consignacao-comissao">Comissão padrão (%)</label><input id="consignacao-comissao" name="comissao" type="number" min="0" max="100" step="0.01" required></div><label class="toggle-pill"><input id="consignacao-ativo" name="ativo" type="checkbox" checked> Estabelecimento ativo</label></div><div class="filamento-form__footer"><p id="consignacao-form-message" class="admin-form-message" aria-live="polite"></p><div class="filamento-form__actions"><button id="consignacao-cancelar" type="button" class="admin-button admin-button--ghost">CANCELAR</button><button type="submit" class="admin-button admin-button--primary">SALVAR</button></div></div></form></section>
+                <section class="consignacao-section"><p id="consignacao-mensagem" class="admin-form-message" aria-live="polite"></p><div id="consignacao-lista" class="consignacao-lista"></div></section>
+                <section class="consignacao-section" aria-labelledby="consignacao-movimentar-titulo">
+                    <h2 id="consignacao-movimentar-titulo">MOVIMENTAR ESTOQUE CONSIGNADO</h2>
+                    <p class="consignacao-section__intro">Envios e reposições saem do estoque próprio. Devoluções retornam ao estoque próprio. Ajustes registram apenas a correção auditável do saldo consignado.</p>
+                    <form id="consignacao-movimento-form" class="consignacao-movimento-form">
+                        <div class="filamento-form__grid">
+                            <div class="config-field"><label for="consignacao-movimento-estabelecimento">Estabelecimento</label><select id="consignacao-movimento-estabelecimento" name="estabelecimento" required></select></div>
+                            <div class="config-field"><label for="consignacao-movimento-produto">Produto</label><select id="consignacao-movimento-produto" name="produto" required></select></div>
+                            <div class="config-field"><label for="consignacao-movimento-variacao">Variação</label><select id="consignacao-movimento-variacao" name="variacao" required></select></div>
+                            <div class="config-field"><label for="consignacao-movimento-tipo">Operação</label><select id="consignacao-movimento-tipo" name="tipo" required><option value="ENVIO">Envio inicial</option><option value="REPOSICAO">Reposição</option><option value="DEVOLUCAO">Devolução</option><option value="AJUSTE_POSITIVO">Ajuste positivo</option><option value="AJUSTE_NEGATIVO">Ajuste negativo</option></select></div>
+                            <div class="config-field"><label for="consignacao-movimento-quantidade">Quantidade</label><input id="consignacao-movimento-quantidade" name="quantidade" type="number" min="1" step="1" required></div>
+                            <div class="config-field consignacao-movimento-observacao"><label for="consignacao-movimento-observacao">Observação / motivo</label><input id="consignacao-movimento-observacao" name="observacao" maxlength="1000" required></div>
+                        </div>
+                        <div class="filamento-form__footer"><p id="consignacao-movimento-mensagem" class="admin-form-message" aria-live="polite"></p><div class="filamento-form__actions"><button id="consignacao-movimento-enviar" type="submit" class="admin-button admin-button--primary">REGISTRAR MOVIMENTAÇÃO</button></div></div>
+                    </form>
+                </section>
+                <section class="consignacao-section" aria-labelledby="consignacao-saldos-titulo">
+                    <h2 id="consignacao-saldos-titulo">SALDOS NO ESTABELECIMENTO</h2>
+                    <div class="admin-table-wrap"><table><thead><tr><th>Produto</th><th>Variação</th><th>SKU / modelo</th><th>Saldo</th><th>Atualizado em</th></tr></thead><tbody id="consignacao-saldos"></tbody></table></div>
+                </section>
+                <section class="consignacao-section" aria-labelledby="consignacao-historico-titulo">
+                    <h2 id="consignacao-historico-titulo">HISTÓRICO DE MOVIMENTAÇÕES</h2>
+                    <div class="admin-table-wrap"><table><thead><tr><th>Data</th><th>Estabelecimento</th><th>Produto</th><th>Variação</th><th>Tipo</th><th>Quantidade</th><th>Saldo</th><th>Observação</th></tr></thead><tbody id="consignacao-historico"></tbody></table></div>
+                </section>
+                <section class="consignacao-section" aria-labelledby="consignacao-conferencia-titulo">
+                    <h2 id="consignacao-conferencia-titulo">NOVA CONFERÊNCIA</h2>
+                    <p class="consignacao-section__intro">A conferência apura todo o saldo positivo do estabelecimento. Reposição deve ser registrada separadamente, após a confirmação.</p>
+                    <form id="consignacao-conferencia-form" class="consignacao-conferencia-form">
+                        <div class="filamento-form__grid">
+                            <div class="config-field"><label for="consignacao-conferencia-estabelecimento">Estabelecimento</label><select id="consignacao-conferencia-estabelecimento" name="estabelecimento" required></select></div>
+                            <div class="config-field"><label for="consignacao-conferencia-data">Data da visita</label><input id="consignacao-conferencia-data" name="dataVisita" type="date" required></div>
+                            <div class="config-field consignacao-movimento-observacao"><label for="consignacao-conferencia-observacao">Observações</label><textarea id="consignacao-conferencia-observacao" name="observacao" maxlength="1000" required></textarea></div>
+                        </div>
+                        <div class="admin-table-wrap"><table class="consignacao-conferencia-tabela"><thead><tr><th>Produto / variação</th><th>Esperado</th><th>Encontrado</th><th>Diferença</th><th>Vendido</th><th>Perdido</th><th>Quebrado</th><th>Extrav.</th><th>Preço unit.</th></tr></thead><tbody id="consignacao-conferencia-itens"></tbody></table></div>
+                        <p id="consignacao-conferencia-vazia" class="admin-form-message">Selecione um estabelecimento com saldo consignado positivo.</p>
+                        <div class="consignacao-conferencia-resumo"><span>Vendido: <strong id="consignacao-conferencia-total-vendido">0</strong></span><span>Bruto: <strong id="consignacao-conferencia-total-bruto">R$ 0,00</strong></span><span>Comissão: <strong id="consignacao-conferencia-total-comissao">R$ 0,00</strong></span><span>Líquido Rondy Lab: <strong id="consignacao-conferencia-total-liquido">R$ 0,00</strong></span></div>
+                        <div class="filamento-form__footer"><p id="consignacao-conferencia-mensagem" class="admin-form-message" aria-live="polite"></p><div class="filamento-form__actions"><button id="consignacao-conferencia-confirmar" type="submit" class="admin-button admin-button--primary" disabled>CONFIRMAR CONFERÊNCIA</button></div></div>
+                    </form>
+                </section>
+                <section class="consignacao-section" aria-labelledby="consignacao-conferencias-historico-titulo">
+                    <h2 id="consignacao-conferencias-historico-titulo">HISTÓRICO DE CONFERÊNCIAS</h2>
+                    <div class="admin-table-wrap"><table><thead><tr><th>Visita</th><th>Confirmada em</th><th>Estabelecimento</th><th>Identificador</th><th>Vendido</th><th>Bruto</th><th>Comissão</th><th></th></tr></thead><tbody id="consignacao-conferencias"></tbody></table></div>
+                    <div id="consignacao-conferencia-detalhes" class="consignacao-conferencia-detalhes is-hidden"><h3>ITENS DA CONFERÊNCIA</h3><div class="admin-table-wrap"><table><thead><tr><th>Produto</th><th>Variação</th><th>Anterior</th><th>Encontrado</th><th>Vendido</th><th>Perdas</th><th>Preço</th><th>Comissão</th></tr></thead><tbody id="consignacao-conferencia-detalhes-itens"></tbody></table></div></div>
+                </section>
+                <section class="consignacao-section" aria-labelledby="consignacao-financeiro-titulo">
+                    <h2 id="consignacao-financeiro-titulo">FECHAMENTOS FINANCEIROS</h2>
+                    <p class="consignacao-section__intro">Os valores são calculados exclusivamente dos snapshots das conferências e os pagamentos apenas registram recebimentos externos.</p>
+                    <form id="consignacao-fechamento-form" class="consignacao-fechamento-form">
+                        <div class="filamento-form__grid"><div class="config-field"><label for="consignacao-fechamento-estabelecimento">Estabelecimento</label><select id="consignacao-fechamento-estabelecimento" name="estabelecimento" required></select></div><div class="config-field consignacao-movimento-observacao"><label for="consignacao-fechamento-observacao">Observação do fechamento</label><textarea id="consignacao-fechamento-observacao" name="observacao" maxlength="1000" required></textarea></div></div>
+                        <div class="admin-table-wrap"><table><thead><tr><th></th><th>Visita</th><th>Confirmada em</th><th>Identificador</th><th>Bruto</th><th>Comissão</th><th>Líquido</th></tr></thead><tbody id="consignacao-fechamento-conferencias-disponiveis"></tbody></table></div>
+                        <p id="consignacao-fechamento-vazio" class="admin-form-message">Selecione um estabelecimento para ver conferências sem fechamento.</p>
+                        <div class="consignacao-conferencia-resumo"><span>Bruto: <strong id="consignacao-fechamento-bruto">R$ 0,00</strong></span><span>Comissão: <strong id="consignacao-fechamento-comissao">R$ 0,00</strong></span><span>Líquido Rondy Lab: <strong id="consignacao-fechamento-liquido">R$ 0,00</strong></span></div>
+                        <div class="filamento-form__footer"><p id="consignacao-fechamento-mensagem" class="admin-form-message" aria-live="polite"></p><div class="filamento-form__actions"><button id="consignacao-fechamento-criar" type="submit" class="admin-button admin-button--primary" disabled>CRIAR FECHAMENTO</button></div></div>
+                    </form>
+                    <section class="consignacao-financeiro-resumo"><span>Total devido: <strong id="consignacao-financeiro-devido">R$ 0,00</strong></span><span>Recebido: <strong id="consignacao-financeiro-recebido">R$ 0,00</strong></span><span>Pendente: <strong id="consignacao-financeiro-pendente">R$ 0,00</strong></span></section>
+                    <div class="admin-table-wrap"><table><thead><tr><th>Identificador</th><th>Criado em</th><th>Bruto</th><th>Comissão</th><th>Líquido</th><th>Pago</th><th>Pendente</th><th>Status</th><th></th></tr></thead><tbody id="consignacao-fechamentos"></tbody></table></div>
+                    <section id="consignacao-fechamento-detalhes" class="consignacao-conferencia-detalhes is-hidden"><h3>DETALHES DO FECHAMENTO</h3><div id="consignacao-fechamento-conferencias-vinculadas" class="consignacao-fechamento-vinculos"></div><form id="consignacao-pagamento-form" class="consignacao-pagamento-form"><div class="filamento-form__grid"><div class="config-field"><label for="consignacao-pagamento-data">Data do pagamento</label><input id="consignacao-pagamento-data" name="dataPagamento" type="date" required></div><div class="config-field"><label for="consignacao-pagamento-valor">Valor recebido</label><input id="consignacao-pagamento-valor" name="valor" type="number" min="0.01" step="0.01" required></div><div class="config-field"><label for="consignacao-pagamento-forma">Forma</label><select id="consignacao-pagamento-forma" name="forma" required><option value="PIX">PIX</option><option value="DINHEIRO">DINHEIRO</option><option value="TRANSFERENCIA">TRANSFERÊNCIA</option><option value="DEBITO">DÉBITO</option><option value="CREDITO">CRÉDITO</option><option value="OUTRO">OUTRO</option></select></div><div class="config-field"><label for="consignacao-pagamento-observacao">Observação</label><input id="consignacao-pagamento-observacao" name="observacao" maxlength="1000" required></div></div><div class="filamento-form__footer"><p id="consignacao-pagamento-mensagem" class="admin-form-message" aria-live="polite"></p><div class="filamento-form__actions"><button id="consignacao-pagamento-registrar" type="submit" class="admin-button admin-button--primary">REGISTRAR PAGAMENTO</button></div></div></form><h3>HISTÓRICO DE PAGAMENTOS</h3><div class="admin-table-wrap"><table><thead><tr><th>Data</th><th>Registrado em</th><th>Valor</th><th>Forma</th><th>Observação</th></tr></thead><tbody id="consignacao-pagamentos"></tbody></table></div></section>
+                </section>
+                <section id="portal-links-teste" class="consignacao-section portal-links-teste is-hidden" aria-labelledby="portal-links-teste-titulo" hidden>
+                    <h2 id="portal-links-teste-titulo">TESTE DE ACESSO — PORTAL DO LOJISTA</h2>
+                    <p class="consignacao-section__intro">Interface temporária para administrar o link de acesso do lojista. O portal público ainda não foi implementado.</p>
+                    <div class="filamento-form__grid"><div class="config-field"><label for="portal-links-estabelecimento">Estabelecimento</label><select id="portal-links-estabelecimento" aria-describedby="portal-links-mensagem"></select></div></div>
+                    <div class="portal-links-status" aria-live="polite"><p>Status do acesso: <strong id="portal-links-status">Selecione um estabelecimento.</strong></p><p id="portal-links-detalhes"></p></div>
+                    <div class="filamento-form__actions portal-links-acoes"><button id="portal-links-consultar" type="button" class="admin-button">CONSULTAR STATUS</button><button id="portal-links-gerar" type="button" class="admin-button admin-button--primary">GERAR LINK</button><button id="portal-links-substituir" type="button" class="admin-button">SUBSTITUIR LINK</button><button id="portal-links-pausar" type="button" class="admin-button">PAUSAR ACESSO</button><button id="portal-links-reativar" type="button" class="admin-button">REATIVAR ACESSO</button><button id="portal-links-revogar" type="button" class="admin-button">REVOGAR ACESSO</button></div>
+                    <div id="portal-links-resultado" class="portal-links-resultado is-hidden"><label for="portal-links-url">Link gerado</label><div class="portal-links-url"><input id="portal-links-url" type="text" readonly><button id="portal-links-copiar" type="button" class="admin-button">COPIAR LINK</button></div><p>O portal público ainda não foi implementado.</p></div>
+                    <p id="portal-links-mensagem" class="admin-form-message" aria-live="polite"></p>
+                </section>
+            </section>
         </div>
     </div>
 </body>
