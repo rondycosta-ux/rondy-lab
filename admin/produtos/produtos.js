@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('produto-search');
     const typeFilter = document.getElementById('produto-tipo-filter');
+    const archiveFilter = document.getElementById('produto-arquivamento-filter');
     const toolbar = document.getElementById('produtos-toolbar');
     const listNotice = document.getElementById('produtos-listagem-notice');
     const tableWrap = document.getElementById('produtos-table-wrap');
@@ -46,6 +47,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let stockVariation = null;
     let stockBusy = false;
     let reservasAtivasPorVariacao = new Map();
+    let isAdmin = false;
+    let productRemovalBusy = false;
 
     setFiltersDisabled(true);
 
@@ -54,6 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function setFiltersDisabled(disabled) {
         searchInput.disabled = disabled;
         typeFilter.disabled = disabled;
+        archiveFilter.disabled = disabled;
         toolbar.setAttribute('aria-disabled', String(disabled));
     }
 
@@ -160,7 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function mapProduto(row) {
         if (!row || row.user_id !== authenticatedUserId || typeof row.id !== 'string'
-            || typeof row.nome !== 'string' || typeof row.descricao !== 'string' || !['pronta_entrega', 'sob_encomenda'].includes(row.tipo_atendimento)) {
+            || typeof row.nome !== 'string' || typeof row.descricao !== 'string' || typeof row.arquivado !== 'boolean' || !['pronta_entrega', 'sob_encomenda'].includes(row.tipo_atendimento)) {
             throw new Error('A consulta retornou um produto com dados inválidos.');
         }
 
@@ -177,6 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             custoBase,
             tipoAtendimento: row.tipo_atendimento,
             precoBase,
+            arquivado: row.arquivado,
             variacoes: []
         };
     }
@@ -237,11 +242,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     function getVisibleProdutos() {
         const searchTerm = searchInput.value.trim().toLocaleLowerCase('pt-BR');
         const selectedType = typeFilter.value;
+        const selectedArchive = archiveFilter.value;
 
         return produtos.filter((produto) => {
             const matchesSearch = !searchTerm || produto.nome.toLocaleLowerCase('pt-BR').includes(searchTerm);
             const matchesType = selectedType === 'todos' || produto.tipoAtendimento === selectedType;
-            return matchesSearch && matchesType;
+            const matchesArchive = selectedArchive === 'todos'
+                || (selectedArchive === 'arquivados' && produto.arquivado)
+                || (selectedArchive === 'ativos' && !produto.arquivado);
+            return matchesSearch && matchesType && matchesArchive;
         });
     }
 
@@ -279,14 +288,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const statusCell = document.createElement('td');
             const status = document.createElement('span');
-            status.className = 'filamento-tag filamento-tag--disponivel';
-            status.textContent = 'Ativo';
+            status.className = `filamento-tag ${produto.arquivado ? 'filamento-tag--esgotado' : 'filamento-tag--disponivel'}`;
+            status.textContent = produto.arquivado ? 'Arquivado' : 'Ativo';
             statusCell.append(status);
             row.append(statusCell);
 
             const actionsCell = document.createElement('td');
             const actions = document.createElement('div');
             actions.className = 'filamento-actions';
+            if (!produto.arquivado) {
             const editButton = document.createElement('button');
             editButton.type = 'button';
             editButton.textContent = 'EDITAR';
@@ -327,6 +337,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 void loadVariations();
             });
             actions.append(variationsButton);
+            }
+            if (isAdmin) {
+                const removalButton = document.createElement('button');
+                removalButton.type = 'button';
+                removalButton.textContent = produto.arquivado ? 'REATIVAR' : 'EXCLUIR';
+                removalButton.disabled = productRemovalBusy;
+                removalButton.addEventListener('click', () => {
+                    if (produto.arquivado) void reativarProduto(produto);
+                    else void excluirOuArquivarProduto(produto);
+                });
+                actions.append(removalButton);
+            }
             actionsCell.append(actions);
             row.append(actionsCell);
 
@@ -338,13 +360,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderIndicators() {
-        const variacoesAtivas = produtos.reduce((total, produto) => total + produto.variacoes.length, 0);
-        const estoqueTotal = produtos.reduce(
+        const ativos = produtos.filter((produto) => !produto.arquivado);
+        const variacoesAtivas = ativos.reduce((total, produto) => total + produto.variacoes.length, 0);
+        const estoqueTotal = ativos.reduce(
             (total, produto) => total + produto.variacoes.reduce((subtotal, variacao) => subtotal + variacao.estoqueAtual, 0),
             0
         );
         setIndicators({
-            produtosAtivos: produtos.length,
+            produtosAtivos: ativos.length,
             variacoesAtivas,
             estoqueTotal
         });
@@ -353,6 +376,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     function getErrorMessage(error) {
         if (error?.message) return error.message;
         return 'Verifique sua conexão e tente novamente.';
+    }
+
+    async function excluirOuArquivarProduto(produto) {
+        if (!isAdmin || productRemovalBusy || creatingProduct || variationBusy || stockBusy) return;
+        const confirmed = window.confirm(
+            `Excluir “${produto.nome}”?\n\nProdutos com histórico, estoque, vínculos ou imagens serão arquivados e preservados.`
+        );
+        if (!confirmed) return;
+
+        productRemovalBusy = true;
+        renderProdutos();
+        try {
+            await checkVariationUser();
+            const { data, error } = await client.rpc('excluir_ou_arquivar_produto', {
+                p_produto_id: produto.id
+            });
+            if (error) throw error;
+            if (data?.produto_id !== produto.id || !['EXCLUIDO', 'ARQUIVADO'].includes(data.acao)) {
+                throw new Error('O Supabase não confirmou a exclusão ou o arquivamento.');
+            }
+            if (selectedProduct?.id === produto.id) {
+                selectedProduct = null;
+                stockVariation = null;
+                stockPanel.classList.add('is-hidden');
+                variationsPanel.classList.add('is-hidden');
+            }
+            await loadProdutos(data.acao === 'EXCLUIDO'
+                ? 'Produto excluído definitivamente.'
+                : 'Produto arquivado; histórico e dependências foram preservados.');
+        } catch (error) {
+            listNotice.textContent = `Não foi possível concluir a exclusão. ${getErrorMessage(error)}`;
+        } finally {
+            productRemovalBusy = false;
+            if (dataLoaded) renderProdutos();
+        }
+    }
+
+    async function reativarProduto(produto) {
+        if (!isAdmin || productRemovalBusy || creatingProduct || variationBusy || stockBusy) return;
+        if (!window.confirm(`Reativar “${produto.nome}”?`)) return;
+
+        productRemovalBusy = true;
+        renderProdutos();
+        try {
+            await checkVariationUser();
+            const { data, error } = await client.rpc('definir_arquivamento_produto', {
+                p_produto_id: produto.id,
+                p_arquivado: false
+            });
+            if (error) throw error;
+            if (data?.produto_id !== produto.id || data.arquivado !== false) {
+                throw new Error('O Supabase não confirmou a reativação.');
+            }
+            await loadProdutos('Produto reativado com sucesso.');
+        } catch (error) {
+            listNotice.textContent = `Não foi possível reativar o produto. ${getErrorMessage(error)}`;
+        } finally {
+            productRemovalBusy = false;
+            if (dataLoaded) renderProdutos();
+        }
     }
 
     async function loadProdutos(successMessage = '') {
@@ -372,11 +455,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             authenticatedUserId = userData.user.id;
 
+            const { data: adminRole, error: adminRoleError } = await client
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', authenticatedUserId)
+                .eq('role', 'admin')
+                .maybeSingle();
+            if (adminRoleError) throw adminRoleError;
+            isAdmin = adminRole?.role === 'admin';
+
             const produtoRows = await fetchAllRows(() => client
                 .from('produtos')
-                .select('id, user_id, nome, descricao, tipo_atendimento, custo_base, preco_base')
+                .select('id, user_id, nome, descricao, tipo_atendimento, custo_base, preco_base, arquivado')
                 .eq('user_id', authenticatedUserId)
-                .eq('arquivado', false)
                 .order('criado_em', { ascending: false })
                 .order('id', { ascending: true }));
 
@@ -779,6 +870,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     searchInput.addEventListener('input', renderProdutos);
     typeFilter.addEventListener('change', renderProdutos);
+    archiveFilter.addEventListener('change', renderProdutos);
     retryLoadButton.addEventListener('click', () => { void loadProdutos(); });
     openFormButton.addEventListener('click', () => {
         if (!dataLoaded || creatingProduct) return;
