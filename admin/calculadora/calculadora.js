@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const laborMinutos = document.getElementById('labor-minutos');
     const laborRate = document.getElementById('labor-rate');
     const savePriceButton = document.getElementById('save-price');
+    const createOrderButton = document.getElementById('create-order');
     const newCalculationButton = document.getElementById('new-calculation');
     const toggleDetailsButton = document.getElementById('toggle-details');
     const detailsPanel = document.getElementById('details-panel');
@@ -1008,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return errors;
     }
 
-    async function saveCurrentPricing() {
+    async function saveCurrentPricing(createOrder = false) {
         if (!dataLoaded || pricingMutationInProgress) return;
         const validationErrors = validateCalculation();
         if (validationErrors.length) {
@@ -1123,6 +1124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         pricingMutationInProgress = true;
         savePriceButton.disabled = true;
+        createOrderButton.disabled = true;
         setMessage('Salvando precificação…');
         try {
             const { data: userData, error: userError } = await client.auth.getUser();
@@ -1158,6 +1160,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const savedPricing = mapPricing(data);
             savedPricings.unshift(savedPricing);
             renderSavedPricings();
+            if (createOrder) {
+                sessionStorage.setItem('rondy.pedido.precificacao', JSON.stringify({
+                    id: savedPricing.id,
+                    descricao: savedPricing.nome,
+                    quantidade: savedPricing.quantidade,
+                    custoUnitario: savedPricing.unitCost,
+                    valorUnitario: Number(pricing.detalhes.precoManual || pricing.detalhes.precoConsumidor || savedPricing.unitCost || 0)
+                }));
+                window.location.assign('/admin/pedidos/');
+                return;
+            }
             setMessage('Precificação salva com sucesso.');
         } catch (error) {
             console.error('Não foi possível salvar a precificação no Supabase:', error);
@@ -1165,6 +1178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } finally {
             pricingMutationInProgress = false;
             savePriceButton.disabled = !dataLoaded;
+            createOrderButton.disabled = !dataLoaded;
         }
     }
 
@@ -1309,6 +1323,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     addMaterialButton.addEventListener('click', () => addMaterialLine({ focus: true }));
     savePriceButton.addEventListener('click', () => void saveCurrentPricing());
+    createOrderButton.classList.remove('admin-button--disabled');
+    createOrderButton.disabled = !dataLoaded;
+    createOrderButton.addEventListener('click', () => void saveCurrentPricing(true));
     newCalculationButton.addEventListener('click', resetInputs);
     toggleDetailsButton.addEventListener('click', () => detailsPanel.classList.toggle('is-hidden'));
     laborToggle.addEventListener('change', toggleLaborPanel);

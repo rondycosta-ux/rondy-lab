@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let variationDraftId = null;
     let stockVariation = null;
     let stockBusy = false;
+    let reservasAtivasPorVariacao = new Map();
 
     setFiltersDisabled(true);
 
@@ -190,7 +191,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error('A consulta retornou um saldo de variação inválido.');
         }
 
-        return { produtoId: row.produto_id, estoqueAtual };
+        return { id: row.id, produtoId: row.produto_id, estoqueAtual };
+    }
+
+    function atualizarReservasAtivas(rows) {
+        reservasAtivasPorVariacao = new Map();
+        rows.forEach((row) => {
+            if (row.user_id !== authenticatedUserId || row.status !== 'ATIVA' || typeof row.variacao_id !== 'string') {
+                throw new Error('A consulta retornou uma reserva inválida.');
+            }
+            const quantidade = Number(row.quantidade);
+            if (!Number.isInteger(quantidade) || quantidade <= 0) {
+                throw new Error('A consulta retornou uma quantidade reservada inválida.');
+            }
+            reservasAtivasPorVariacao.set(row.variacao_id, (reservasAtivasPorVariacao.get(row.variacao_id) || 0) + quantidade);
+        });
+    }
+
+    async function carregarReservasAtivas() {
+        const rows = await fetchAllRows(() => client.from('pedido_reservas')
+            .select('pedido_item_id, user_id, variacao_id, quantidade, status')
+            .eq('user_id', authenticatedUserId)
+            .eq('status', 'ATIVA')
+            .order('pedido_item_id', { ascending: true }));
+        atualizarReservasAtivas(rows);
     }
 
     async function fetchAllRows(queryFactory) {
@@ -369,6 +393,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .order('id', { ascending: true }))
                 : [];
 
+            await carregarReservasAtivas();
+
             const produtosPorId = new Map(loadedProdutos.map((produto) => [produto.id, produto]));
             variacaoRows.map(mapVariacao).forEach((variacao) => {
                 const produto = produtosPorId.get(variacao.produtoId);
@@ -525,6 +551,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .select('id, user_id, produto_id, nome, modelo, sku, cor, tamanho, variacao_padrao, custo_unitario, preco_unitario, estoque_atual, arquivado')
                 .eq('user_id', authenticatedUserId).eq('produto_id', selectedProduct.id)
                 .order('criado_em', { ascending: true }).order('id', { ascending: true }));
+            await carregarReservasAtivas();
             await checkVariationUser();
             const fragment = document.createDocumentFragment();
             rows.forEach((v) => {
@@ -534,7 +561,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 [v.modelo, v.sku, v.cor, v.tamanho].forEach((value) => appendCell(row, value || '—'));
                 appendCell(row, v.custo_unitario === null ? `Herdado (${formatCurrency(selectedProduct.custoBase)})` : formatCurrency(Number(v.custo_unitario)));
                 appendCell(row, v.preco_unitario === null ? `Herdado (${formatCurrency(selectedProduct.precoBase)})` : formatCurrency(Number(v.preco_unitario)));
+                const reservado = reservasAtivasPorVariacao.get(v.id) || 0;
+                const disponivel = Number(v.estoque_atual) - reservado;
                 appendCell(row, String(v.estoque_atual));
+                appendCell(row, String(reservado));
+                appendCell(row, String(disponivel));
                 appendCell(row, v.arquivado ? 'Arquivada' : 'Ativa');
                 const actions = appendCell(row, '');
                 const stock = document.createElement('button');

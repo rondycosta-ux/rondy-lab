@@ -14,6 +14,7 @@
     <script src="/admin/js/supabase-client.js" defer></script>
     <script src="/admin/js/auth.js" defer></script>
     <script src="/admin/js/admin.js" defer></script>
+    <script src="/admin/pedidos/pedidos.js" defer></script>
 </head>
 <body data-auth-page="protected">
     <section class="auth-gate" aria-label="Verificação de acesso">
@@ -81,12 +82,20 @@
                 </div>
             </header>
 
-            <main class="admin-module">
-                <div class="admin-module__card">
+            <main id="pedidos-app" class="admin-module pedidos-page">
+                <div id="pedidos-placeholder" class="admin-module__card">
                     <p class="admin-module__eyebrow">MÓDULO</p>
                     <h2 class="admin-module__title">Pedidos</h2>
                     <p class="admin-module__status">Módulo em desenvolvimento.</p>
                 </div>
+                <section id="pedidos-interface" class="is-hidden">
+                    <div class="pedidos-toolbar"><h2>PEDIDOS</h2><button id="pedido-novo" class="admin-button admin-button--primary" type="button">NOVO PEDIDO</button></div>
+                    <section class="pedidos-metrics"><article>Total<strong id="pedido-total">—</strong></article><article>Aguardando<strong id="pedido-aguardando">—</strong></article><article>Produção<strong id="pedido-producao">—</strong></article><article>Prontos<strong id="pedido-pronto">—</strong></article><article>Entregues<strong id="pedido-entregue">—</strong></article></section>
+                    <div class="pedidos-controls"><input id="pedido-busca" type="search" placeholder="Buscar por número ou cliente"><select id="pedido-filtro"><option value="">Todos os status</option><option value="CRIADO">Criado</option><option value="AGUARDANDO_PRODUCAO">Aguardando produção</option><option value="EM_PRODUCAO">Em produção</option><option value="PRONTO">Pronto</option><option value="ENTREGUE">Entregue</option><option value="CANCELADO">Cancelado</option></select></div><p id="pedido-mensagem" class="admin-form-message"></p>
+                    <div class="admin-table-wrap"><table><thead><tr><th>#</th><th>Cliente</th><th>Data</th><th>Valor</th><th>Operação</th><th>Financeiro</th><th></th></tr></thead><tbody id="pedido-lista"></tbody></table></div>
+                    <section id="pedido-form-panel" class="pedido-panel is-hidden"><h2 id="pedido-form-titulo">NOVO PEDIDO</h2><form id="pedido-form"><div class="pedido-grid"><label>Cliente<input name="cliente" required></label><label>WhatsApp<input name="whatsapp"></label><label>E-mail<input name="email" type="email"></label><label>Previsão<input name="previsao" type="date"></label><label class="pedido-full">Observações<textarea name="observacoes"></textarea></label></div><div class="pedidos-toolbar"><h3>ITENS</h3><button id="pedido-item-adicionar" type="button" class="admin-button">ADICIONAR</button></div><div id="pedido-itens"></div><p id="pedido-form-mensagem" class="admin-form-message"></p><button id="pedido-salvar" class="admin-button admin-button--primary">SALVAR</button></form></section>
+                    <section id="pedido-detalhe" class="pedido-panel is-hidden"><button id="pedido-detalhe-fechar" class="admin-button">FECHAR</button><div id="pedido-detalhe-conteudo"></div></section>
+                </section>
             </main>
         </div>
     </div>
