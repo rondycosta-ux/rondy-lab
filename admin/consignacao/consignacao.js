@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const client = window.RondySupabase.getClient();
     const $ = (id) => document.getElementById(id);
     const form = $('consignacao-form'), panel = $('consignacao-form-panel'), list = $('consignacao-lista');
-    const message = $('consignacao-mensagem'), formMessage = $('consignacao-form-message');
+    const message = $('consignacao-mensagem'), formMessage = $('consignacao-form-message'), statusFilter = $('consignacao-filtro-status');
     const movementForm = $('consignacao-movimento-form'), movementMessage = $('consignacao-movimento-mensagem');
     const establishmentSelect = $('consignacao-movimento-estabelecimento'), productSelect = $('consignacao-movimento-produto'), variationSelect = $('consignacao-movimento-variacao'), movementSubmit = $('consignacao-movimento-enviar');
     const balancesBody = $('consignacao-saldos'), historyBody = $('consignacao-historico');
@@ -51,16 +51,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderEstablishments() {
-        const query = $('consignacao-busca').value.trim().toLocaleLowerCase('pt-BR'), fragment = document.createDocumentFragment();
-        const visible = establishments.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(query));
-        $('consignacao-ativos').textContent = establishments.filter((item) => item.ativo).length;
+        const query = $('consignacao-busca').value.trim().toLocaleLowerCase('pt-BR'), filter = statusFilter.value, fragment = document.createDocumentFragment();
+        const visible = establishments.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(query) && (filter === 'todos' || (filter === 'arquivados' ? item.arquivado : !item.arquivado && (filter === 'ativos' ? item.ativo : !item.ativo))));
+        $('consignacao-ativos').textContent = establishments.filter((item) => item.ativo && !item.arquivado).length;
         visible.forEach((item) => {
             const card = document.createElement('article'); card.className = 'consignacao-card';
             const title = document.createElement('h2'); title.textContent = item.nome;
-            const status = document.createElement('span'); status.textContent = item.ativo ? 'ATIVO' : 'INATIVO'; status.className = item.ativo ? 'is-active' : '';
+            const status = document.createElement('span'); status.textContent = item.arquivado ? 'ARQUIVADO' : item.ativo ? 'ATIVO' : 'INATIVO'; status.className = item.ativo && !item.arquivado ? 'is-active' : '';
             const details = document.createElement('p'); details.textContent = `${item.responsavel || 'Sem responsável'} · ${item.whatsapp || 'Sem WhatsApp'} · Comissão: ${Number(item.comissao_percentual).toLocaleString('pt-BR')}%`;
             const actions = document.createElement('div');
-            [['EDITAR', () => openEstablishment(item)], [item.ativo ? 'DESATIVAR' : 'ATIVAR', () => toggleEstablishment(item)]].forEach(([label, handler]) => { const button = document.createElement('button'); button.type = 'button'; button.textContent = label; button.addEventListener('click', handler); actions.append(button); });
+            const options = [['EDITAR', () => openEstablishment(item)]];
+            if (item.arquivado) options.push(['REATIVAR', () => changeEstablishmentStatus(item, 'REATIVAR')]);
+            else { options.push([item.ativo ? 'INATIVAR' : 'ATIVAR', () => changeEstablishmentStatus(item, item.ativo ? 'INATIVAR' : 'ATIVAR')], ['ARQUIVAR', () => changeEstablishmentStatus(item, 'ARQUIVAR')]); }
+            options.push(['EXCLUIR', () => deleteEstablishment(item)]);
+            options.forEach(([label, handler]) => { const button = document.createElement('button'); button.type = 'button'; button.textContent = label; button.addEventListener('click', handler); actions.append(button); });
             card.append(title, status, details, actions); fragment.append(card);
         });
         if (!visible.length) { const empty = document.createElement('p'); empty.textContent = 'Nenhum estabelecimento encontrado.'; fragment.append(empty); }
@@ -77,13 +81,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderMovementSelectors() {
         const selectedEstablishment = establishmentSelect.value, selectedProduct = productSelect.value;
         establishmentSelect.replaceChildren(); addOption(establishmentSelect, '', 'Selecione o estabelecimento');
-        establishments.filter((item) => item.ativo).forEach((item) => addOption(establishmentSelect, item.id, item.nome));
-        establishmentSelect.value = establishments.some((item) => item.ativo && item.id === selectedEstablishment) ? selectedEstablishment : '';
+        establishments.filter((item) => item.ativo && !item.arquivado).forEach((item) => addOption(establishmentSelect, item.id, item.nome));
+        establishmentSelect.value = establishments.some((item) => item.ativo && !item.arquivado && item.id === selectedEstablishment) ? selectedEstablishment : '';
         productSelect.replaceChildren(); addOption(productSelect, '', 'Selecione o produto');
         products.filter((item) => !item.arquivado).forEach((item) => addOption(productSelect, item.id, item.nome));
         productSelect.value = products.some((item) => !item.arquivado && item.id === selectedProduct) ? selectedProduct : '';
         renderVariations();
-        const ready = establishments.some((item) => item.ativo) && products.some((item) => !item.arquivado) && variations.some((item) => !item.arquivado);
+        const ready = establishments.some((item) => item.ativo && !item.arquivado) && products.some((item) => !item.arquivado) && variations.some((item) => !item.arquivado);
         movementSubmit.disabled = !ready;
         if (!ready) notice(movementMessage, 'Cadastre um estabelecimento ativo e uma variação de produto ativa para movimentar.', true);
     }
@@ -115,8 +119,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderConferenceSelector() {
         const previous = conferenceSelect.value;
         conferenceSelect.replaceChildren(); addOption(conferenceSelect, '', 'Selecione o estabelecimento');
-        establishments.filter((item) => item.ativo).forEach((item) => addOption(conferenceSelect, item.id, item.nome));
-        conferenceSelect.value = establishments.some((item) => item.ativo && item.id === previous) ? previous : '';
+        establishments.filter((item) => item.ativo && !item.arquivado).forEach((item) => addOption(conferenceSelect, item.id, item.nome));
+        conferenceSelect.value = establishments.some((item) => item.ativo && !item.arquivado && item.id === previous) ? previous : '';
     }
 
     function input(type, value, max, label) {
@@ -282,7 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function load(messageText = '') {
         await verifyAdmin();
         const results = await Promise.all([
-            client.from('estabelecimentos').select('id,nome,responsavel,whatsapp,comissao_percentual,ativo,criado_em').eq('user_id', userId).order('criado_em', { ascending: false }),
+            client.from('estabelecimentos').select('id,nome,responsavel,whatsapp,comissao_percentual,ativo,arquivado,criado_em').eq('user_id', userId).order('criado_em', { ascending: false }),
             client.from('produtos').select('id,nome,preco_base,arquivado').eq('user_id', userId).order('nome'),
             client.from('produto_variacoes').select('id,produto_id,nome,modelo,sku,cor,tamanho,variacao_padrao,preco_unitario,arquivado').eq('user_id', userId).order('criado_em'),
             client.from('consignacao_saldos').select('estabelecimento_id,variacao_id,quantidade,atualizado_em'),
@@ -434,18 +438,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function openEstablishment(item) {
-        editId = item?.id || null; form.reset(); form.elements.ativo.checked = true;
+        editId = item?.id || null; form.reset(); form.elements.ativo.checked = true; form.elements.ativo.disabled = Boolean(item?.arquivado);
         if (item) { form.elements.nome.value = item.nome; form.elements.responsavel.value = item.responsavel; form.elements.whatsapp.value = item.whatsapp; form.elements.comissao.value = item.comissao_percentual; form.elements.ativo.checked = item.ativo; $('consignacao-form-title').textContent = 'EDITAR ESTABELECIMENTO'; } else $('consignacao-form-title').textContent = 'NOVO ESTABELECIMENTO';
         notice(formMessage, ''); panel.classList.remove('is-hidden'); form.elements.nome.focus();
     }
 
-    async function toggleEstablishment(item) {
-        try { await verifyAdmin(); const result = await client.from('estabelecimentos').update({ ativo: !item.ativo }).eq('id', item.id).eq('user_id', userId); if (result.error) throw result.error; await load(`Estabelecimento ${item.ativo ? 'desativado' : 'ativado'} com sucesso.`); } catch (error) { notice(message, errorText(error), true); }
+    async function changeEstablishmentStatus(item, status) {
+        if (status === 'ARQUIVAR' && !window.confirm(`Arquivar ${item.nome}? Ele deixara de aparecer na listagem padrao e acessos do portal serao invalidados.`)) return;
+        try { await verifyAdmin(); const { error } = await client.rpc('definir_status_estabelecimento', { p_estabelecimento_id: item.id, p_status: status }); if (error) throw error; const labels = { ATIVAR: 'ativado', INATIVAR: 'inativado', ARQUIVAR: 'arquivado', REATIVAR: 'reativado' }; await load(`Estabelecimento ${labels[status]} com sucesso.`); } catch (error) { notice(message, errorText(error), true); }
+    }
+
+    async function deleteEstablishment(item) {
+        if (!window.confirm(`Excluir definitivamente ${item.nome}? Esta acao so e permitida sem historico ou dependencias.`)) return;
+        try { await verifyAdmin(); const { error } = await client.rpc('excluir_estabelecimento', { p_estabelecimento_id: item.id }); if (error) throw error; await load('Estabelecimento excluido com sucesso.'); } catch (error) { notice(message, errorText(error), true); }
     }
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault(); if (!form.reportValidity()) return;
-        try { await verifyAdmin(); const payload = { nome: form.elements.nome.value.trim(), responsavel: form.elements.responsavel.value.trim(), whatsapp: form.elements.whatsapp.value.trim(), comissao_percentual: Number(form.elements.comissao.value), ativo: form.elements.ativo.checked }; const result = editId ? await client.from('estabelecimentos').update(payload).eq('id', editId).eq('user_id', userId) : await client.from('estabelecimentos').insert({ ...payload, user_id: userId }); if (result.error) throw result.error; panel.classList.add('is-hidden'); await load('Estabelecimento salvo com sucesso.'); } catch (error) { notice(formMessage, `Não foi possível salvar. ${errorText(error)}`, true); }
+        try { await verifyAdmin(); const payload = { nome: form.elements.nome.value.trim(), responsavel: form.elements.responsavel.value.trim(), whatsapp: form.elements.whatsapp.value.trim(), comissao_percentual: Number(form.elements.comissao.value) }; const current = establishments.find((item) => item.id === editId); const result = editId ? await client.from('estabelecimentos').update(payload).eq('id', editId).eq('user_id', userId) : await client.from('estabelecimentos').insert({ ...payload, ativo: form.elements.ativo.checked, user_id: userId }); if (result.error) throw result.error; if (current && !current.arquivado && current.ativo !== form.elements.ativo.checked) { const { error } = await client.rpc('definir_status_estabelecimento', { p_estabelecimento_id: current.id, p_status: current.ativo ? 'INATIVAR' : 'ATIVAR' }); if (error) throw error; } panel.classList.add('is-hidden'); await load('Estabelecimento salvo com sucesso.'); } catch (error) { notice(formMessage, `Não foi possível salvar. ${errorText(error)}`, true); }
     });
 
     movementForm.addEventListener('submit', async (event) => {
@@ -459,7 +469,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const { items } = conferencePayload(true);
             const establishment = establishments.find((item) => item.id === conferenceSelect.value);
-            if (!establishment?.ativo) throw new Error('Selecione um estabelecimento ativo.');
+            if (!establishment?.ativo || establishment.arquivado) throw new Error('Selecione um estabelecimento ativo.');
             if (!window.confirm(`Confirmar definitivamente a conferência de ${establishment.nome}? Esta operação não poderá ser editada.`)) return;
             await verifyAdmin(); conferenceSubmit.disabled = true;
             const { data, error } = await client.rpc('confirmar_conferencia_consignacao', { p_id: conferenceOperationId, p_estabelecimento_id: conferenceSelect.value, p_data_visita: conferenceForm.elements.dataVisita.value, p_observacao: conferenceForm.elements.observacao.value.trim(), p_itens: items });
@@ -500,7 +510,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     $('consignacao-novo').addEventListener('click', () => openEstablishment());
     $('consignacao-cancelar').addEventListener('click', () => panel.classList.add('is-hidden'));
-    $('consignacao-busca').addEventListener('input', renderEstablishments);
+    $('consignacao-busca').addEventListener('input', renderEstablishments); statusFilter.addEventListener('change', renderEstablishments);
     productSelect.addEventListener('change', renderVariations); establishmentSelect.addEventListener('change', renderBalances);
     conferenceSelect.addEventListener('change', () => { conferenceOperationId = crypto.randomUUID(); renderConferenceItems(); });
     closingSelect.addEventListener('change', () => { closingOperationId = crypto.randomUUID(); closingDetails.classList.add('is-hidden'); renderAvailableConferences(); renderClosings(); });
