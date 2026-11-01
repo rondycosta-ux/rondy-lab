@@ -5,10 +5,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const client = window.RondySupabase.getClient();
     const $ = (id) => document.getElementById(id);
     const form = $('consignacao-form'), panel = $('consignacao-form-panel'), list = $('consignacao-lista');
-    const message = $('consignacao-mensagem'), formMessage = $('consignacao-form-message'), statusFilter = $('consignacao-filtro-status');
+    const message = $('consignacao-mensagem'), formMessage = $('consignacao-form-message'), statusFilters = [...document.querySelectorAll('[data-estabelecimento-filter]')];
     const movementForm = $('consignacao-movimento-form'), movementMessage = $('consignacao-movimento-mensagem');
     const establishmentSelect = $('consignacao-movimento-estabelecimento'), productSelect = $('consignacao-movimento-produto'), variationSelect = $('consignacao-movimento-variacao'), movementSubmit = $('consignacao-movimento-enviar');
-    const balancesBody = $('consignacao-saldos'), historyBody = $('consignacao-historico');
+    const balancesBody = $('consignacao-saldos'), historyBody = $('consignacao-historico'), historyEstablishment = $('consignacao-historico-estabelecimento'), historyCount = $('consignacao-historico-contagem'), historyLoadMore = $('consignacao-historico-carregar-mais');
     const conferenceForm = $('consignacao-conferencia-form'), conferenceSelect = $('consignacao-conferencia-estabelecimento');
     const conferenceItemsBody = $('consignacao-conferencia-itens'), conferenceEmpty = $('consignacao-conferencia-vazia'), conferenceMessage = $('consignacao-conferencia-mensagem'), conferenceSubmit = $('consignacao-conferencia-confirmar');
     const conferencesBody = $('consignacao-conferencias'), conferenceDetails = $('consignacao-conferencia-detalhes'), conferenceDetailsBody = $('consignacao-conferencia-detalhes-itens');
@@ -16,8 +16,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closingsBody = $('consignacao-fechamentos'), closingDetails = $('consignacao-fechamento-detalhes'), closingLinks = $('consignacao-fechamento-conferencias-vinculadas');
     const paymentForm = $('consignacao-pagamento-form'), paymentMessage = $('consignacao-pagamento-mensagem'), paymentSubmit = $('consignacao-pagamento-registrar'), paymentsBody = $('consignacao-pagamentos');
     const portalPanel = $('portal-links-teste'), portalEstablishment = $('portal-links-estabelecimento'), portalStatus = $('portal-links-status'), portalDetails = $('portal-links-detalhes'), portalMessage = $('portal-links-mensagem'), portalResult = $('portal-links-resultado'), portalUrl = $('portal-links-url');
+    const consignationNav = document.querySelector('.admin-nav__group--consignacao'), consignationToggle = consignationNav?.querySelector('.admin-nav__item--toggle'), consignationSubnav = $('consignacao-subnav'), consignationViews = [...document.querySelectorAll('[data-consignacao-view]')], consignationLinks = [...document.querySelectorAll('[data-consignacao-nav]')];
     let userId, establishments = [], products = [], variations = [], balances = [], movements = [], commissions = [], conferences = [], conferenceItems = [], closings = [], closingConferences = [], payments = [], editId = null, conferenceOperationId = null, closingOperationId = null, paymentOperationId = null, selectedClosingId = null;
-    let portalLinksReady = false, portalRequestPending = false;
+    const historyPageSize = 50;
+    let portalLinksReady = false, portalRequestPending = false, establishmentFilter = 'ativos', historyNextOffset = 0, historyHasMore = false, historyLoading = false, historyRequestVersion = 0, historyError = '';
 
     const notice = (node, text, error = false) => { node.textContent = text; node.classList.toggle('is-error', error); };
     const errorText = (error) => error?.message || 'Ocorreu um erro inesperado.';
@@ -32,6 +34,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     };
     const valueNumber = (input) => Number(input.value);
+
+    function setConsignationMenu(open) {
+        consignationNav?.classList.toggle('is-open', open);
+        consignationToggle?.setAttribute('aria-expanded', String(open));
+        if (consignationSubnav) consignationSubnav.hidden = !open;
+    }
+
+    function showConsignationView(openMenu = Boolean(window.location.hash)) {
+        const section = window.location.hash.slice(1) || 'estabelecimentos';
+        const valid = consignationViews.some((view) => view.dataset.consignacaoView === section) ? section : 'estabelecimentos';
+        consignationViews.forEach((view) => { view.hidden = view.dataset.consignacaoView !== valid; });
+        consignationLinks.forEach((link) => link.classList.toggle('is-active', link.dataset.consignacaoNav === valid));
+        setConsignationMenu(openMenu);
+    }
 
     async function verifyAdmin() {
         const { data, error } = await client.auth.getUser();
@@ -51,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderEstablishments() {
-        const query = $('consignacao-busca').value.trim().toLocaleLowerCase('pt-BR'), filter = statusFilter.value, fragment = document.createDocumentFragment();
+        const query = $('consignacao-busca').value.trim().toLocaleLowerCase('pt-BR'), filter = establishmentFilter, fragment = document.createDocumentFragment();
         const visible = establishments.filter((item) => item.nome.toLocaleLowerCase('pt-BR').includes(query) && (filter === 'todos' || (filter === 'arquivados' ? item.arquivado : !item.arquivado && (filter === 'ativos' ? item.ativo : !item.ativo))));
         $('consignacao-ativos').textContent = establishments.filter((item) => item.ativo && !item.arquivado).length;
         visible.forEach((item) => {
@@ -103,13 +119,80 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderMovementHistory() {
-        const { variation, product, establishment } = maps(), fragment = document.createDocumentFragment();
+        const { variation, product, establishment } = maps(), selected = historyEstablishment.value, fragment = document.createDocumentFragment();
         movements.forEach((item) => {
             const current = variation.get(item.variacao_id), row = document.createElement('tr');
             cell(row, formatDate(item.movimentado_em)); cell(row, establishment.get(item.estabelecimento_id)?.nome || 'Estabelecimento indisponível'); cell(row, product.get(current?.produto_id)?.nome || 'Produto indisponível'); cell(row, variationName(current)); cell(row, item.tipo.replace('_', ' ')); cell(row, String(item.quantidade)); cell(row, `${item.saldo_anterior} → ${item.saldo_resultante}`); cell(row, item.observacao); fragment.append(row);
         });
-        if (!fragment.childNodes.length) { const row = document.createElement('tr'), empty = cell(row, 'Nenhuma movimentação registrada.'); empty.colSpan = 8; fragment.append(row); }
+        if (!fragment.childNodes.length) {
+            const row = document.createElement('tr');
+            const empty = cell(row, historyLoading ? 'Carregando movimentações…' : historyError || (selected ? 'Nenhuma movimentação encontrada para este estabelecimento.' : 'Nenhuma movimentação registrada.'));
+            empty.colSpan = 8;
+            fragment.append(row);
+        }
+        historyCount.textContent = historyLoading
+            ? (movements.length ? `Exibindo ${movements.length} movimentaç${movements.length === 1 ? 'ão' : 'ões'}. Carregando mais…` : 'Carregando movimentações…')
+            : historyError
+                ? 'Não foi possível atualizar o histórico.'
+                : `Exibindo ${movements.length} movimentaç${movements.length === 1 ? 'ão' : 'ões'}.`;
+        historyLoadMore.hidden = !historyHasMore && !historyError;
+        historyLoadMore.disabled = historyLoading;
+        historyLoadMore.textContent = historyLoading && movements.length ? 'CARREGANDO…' : historyError ? 'TENTAR NOVAMENTE' : 'CARREGAR MAIS';
         historyBody.replaceChildren(fragment);
+    }
+
+    async function loadMovementHistory({ reset = false } = {}) {
+        if (historyLoading && !reset) return;
+        const requestVersion = reset ? historyRequestVersion + 1 : historyRequestVersion;
+        if (reset) {
+            historyRequestVersion = requestVersion;
+            historyNextOffset = 0;
+            historyHasMore = false;
+            historyError = '';
+            movements = [];
+        }
+
+        const selected = historyEstablishment.value;
+        const offset = historyNextOffset;
+        historyLoading = true;
+        renderMovementHistory();
+
+        let query = client.from('consignacao_movimentacoes')
+            .select('id,estabelecimento_id,variacao_id,tipo,quantidade,saldo_anterior,saldo_resultante,observacao,movimentado_em')
+            .eq('user_id', userId)
+            .order('movimentado_em', { ascending: false })
+            .order('id', { ascending: false });
+        if (selected) query = query.eq('estabelecimento_id', selected);
+
+        try {
+            const { data, error } = await query.range(offset, offset + historyPageSize);
+            if (requestVersion !== historyRequestVersion || selected !== historyEstablishment.value) return;
+            if (error) throw error;
+
+            const rows = Array.isArray(data) ? data : [];
+            const page = rows.slice(0, historyPageSize);
+            const knownIds = new Set(movements.map((item) => item.id));
+            movements.push(...page.filter((item) => !knownIds.has(item.id)));
+            historyNextOffset = offset + historyPageSize;
+            historyHasMore = rows.length > historyPageSize;
+            historyError = '';
+        } catch (error) {
+            if (requestVersion !== historyRequestVersion || selected !== historyEstablishment.value) return;
+            historyError = `Não foi possível carregar o histórico. ${errorText(error)}`;
+            historyHasMore = false;
+        } finally {
+            if (requestVersion === historyRequestVersion && selected === historyEstablishment.value) {
+                historyLoading = false;
+                renderMovementHistory();
+            }
+        }
+    }
+
+    function renderHistoryEstablishmentFilter() {
+        const selected = historyEstablishment.value;
+        historyEstablishment.replaceChildren(); addOption(historyEstablishment, '', 'Todos os estabelecimentos');
+        establishments.forEach((item) => addOption(historyEstablishment, item.id, item.arquivado ? `${item.nome} (arquivado)` : item.ativo ? item.nome : `${item.nome} (inativo)`));
+        historyEstablishment.value = establishments.some((item) => item.id === selected) ? selected : '';
     }
 
     function activeConferenceBalances() {
@@ -290,7 +373,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             client.from('produtos').select('id,nome,preco_base,arquivado').eq('user_id', userId).order('nome'),
             client.from('produto_variacoes').select('id,produto_id,nome,modelo,sku,cor,tamanho,variacao_padrao,preco_unitario,arquivado').eq('user_id', userId).order('criado_em'),
             client.from('consignacao_saldos').select('estabelecimento_id,variacao_id,quantidade,atualizado_em'),
-            client.from('consignacao_movimentacoes').select('estabelecimento_id,variacao_id,tipo,quantidade,saldo_anterior,saldo_resultante,observacao,movimentado_em').eq('user_id', userId).order('movimentado_em', { ascending: false }).limit(100),
             client.from('estabelecimento_comissoes').select('estabelecimento_id,variacao_id,percentual'),
             client.from('consignacao_conferencias').select('id,estabelecimento_id,data_visita,observacao,confirmada_em').eq('user_id', userId).order('confirmada_em', { ascending: false }).limit(100),
             client.from('consignacao_conferencia_itens').select('conferencia_id,variacao_id,saldo_anterior,quantidade_encontrada,quantidade_vendida,quantidade_perdida,quantidade_quebrada,quantidade_extraviada,saldo_resultante,preco_unitario,comissao_percentual'),
@@ -299,8 +381,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             client.from('consignacao_pagamentos').select('id,fechamento_id,data_pagamento,valor,forma_pagamento,observacao,registrado_em').eq('user_id', userId).order('registrado_em', { ascending: false })
         ]);
         const failed = results.find((result) => result.error); if (failed) throw failed.error;
-        [establishments, products, variations, balances, movements, commissions, conferences, conferenceItems, closings, closingConferences, payments] = results.map((result) => result.data || []);
-        renderEstablishments(); renderMovementSelectors(); renderBalances(); renderMovementHistory(); renderConferenceSelector(); renderConferenceItems(); renderConferences(); renderClosingSelector(); renderAvailableConferences(); renderClosings(); renderPortalEstablishments(); notice(message, messageText || `${establishments.length} estabelecimento(s) cadastrado(s).`);
+        [establishments, products, variations, balances, commissions, conferences, conferenceItems, closings, closingConferences, payments] = results.map((result) => result.data || []);
+        renderEstablishments(); renderMovementSelectors(); renderBalances(); renderHistoryEstablishmentFilter(); renderConferenceSelector(); renderConferenceItems(); renderConferences(); renderClosingSelector(); renderAvailableConferences(); renderClosings(); renderPortalEstablishments(); await loadMovementHistory({ reset: true }); notice(message, messageText || `${establishments.length} estabelecimento(s) cadastrado(s).`);
     }
 
     function formatPortalDate(value) {
@@ -508,12 +590,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) { notice(paymentMessage, `Não foi possível registrar o pagamento. ${errorText(error)}`, true); } finally { const current = closings.find((item) => item.id === selectedClosingId); paymentSubmit.disabled = !current || current.status === 'PAGO'; }
     });
 
+    consignationToggle?.addEventListener('click', () => setConsignationMenu(!consignationNav.classList.contains('is-open')));
+    window.addEventListener('hashchange', () => showConsignationView(true));
     $('consignacao-novo').addEventListener('click', () => openEstablishment());
     $('consignacao-cancelar').addEventListener('click', () => panel.classList.add('is-hidden'));
-    $('consignacao-busca').addEventListener('input', renderEstablishments); statusFilter.addEventListener('change', renderEstablishments);
-    productSelect.addEventListener('change', renderVariations); establishmentSelect.addEventListener('change', renderBalances);
+    $('consignacao-busca').addEventListener('input', renderEstablishments);
+    statusFilters.forEach((button) => button.addEventListener('click', () => { establishmentFilter = button.dataset.estabelecimentoFilter; statusFilters.forEach((item) => item.classList.toggle('is-active', item === button)); renderEstablishments(); }));
+    productSelect.addEventListener('change', renderVariations); establishmentSelect.addEventListener('change', renderBalances); historyEstablishment.addEventListener('change', () => { void loadMovementHistory({ reset: true }); }); historyLoadMore.addEventListener('click', () => { void loadMovementHistory(); });
     conferenceSelect.addEventListener('change', () => { conferenceOperationId = crypto.randomUUID(); renderConferenceItems(); });
     closingSelect.addEventListener('change', () => { closingOperationId = crypto.randomUUID(); closingDetails.classList.add('is-hidden'); renderAvailableConferences(); renderClosings(); });
     conferenceForm.elements.dataVisita.max = today(); conferenceForm.elements.dataVisita.value = today(); conferenceOperationId = crypto.randomUUID(); closingOperationId = crypto.randomUUID(); paymentOperationId = crypto.randomUUID(); initializePortalLinks();
-    try { await load(); } catch (error) { notice(message, `Não foi possível carregar a consignação. ${errorText(error)}`, true); $('consignacao-novo').disabled = true; movementSubmit.disabled = true; conferenceSubmit.disabled = true; closingSubmit.disabled = true; }
+    try { await load(); showConsignationView(); } catch (error) { notice(message, `Não foi possível carregar a consignação. ${errorText(error)}`, true); $('consignacao-novo').disabled = true; movementSubmit.disabled = true; conferenceSubmit.disabled = true; closingSubmit.disabled = true; }
 });

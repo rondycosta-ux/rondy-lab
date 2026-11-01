@@ -134,9 +134,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return { nome, descricao, tipoAtendimento, custoBase, precoBase };
     }
 
-    function appendCell(row, content, className = '') {
+    function appendCell(row, content, className = '', label = '') {
         const cell = document.createElement('td');
         if (className) cell.className = className;
+        if (label) cell.dataset.label = label;
         cell.textContent = content;
         row.append(cell);
         return cell;
@@ -145,7 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function appendEmptyRow(message) {
         const row = document.createElement('tr');
         const cell = appendCell(row, message, 'empty-state');
-        cell.colSpan = 7;
+        cell.colSpan = 5;
         tableBody.replaceChildren(row);
     }
 
@@ -273,20 +274,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             const variacoesAtivas = produto.variacoes.length;
             const estoqueTotal = produto.variacoes.reduce((total, variacao) => total + variacao.estoqueAtual, 0);
 
-            const productCell = appendCell(row, '');
+            const productCell = appendCell(row, '', 'produto-lista-produto', 'Produto');
             const cover = document.createElement('img');
             cover.className = 'produto-lista-capa is-hidden';
             cover.alt = '';
             cover.dataset.produtoCapa = produto.id;
-            const productName = document.createElement('span');
+            const productDetails = document.createElement('div');
+            productDetails.className = 'produto-lista-produto__details';
+            const productName = document.createElement('strong');
+            productName.className = 'produto-lista-produto__name';
             productName.textContent = produto.nome;
-            productCell.append(cover, productName);
-            appendCell(row, typeLabel(produto.tipoAtendimento));
-            appendCell(row, formatCurrency(produto.precoBase));
-            appendCell(row, String(variacoesAtivas));
-            appendCell(row, String(estoqueTotal));
+            const productMeta = document.createElement('span');
+            productMeta.className = 'produto-lista-produto__meta';
+            productMeta.textContent = `${typeLabel(produto.tipoAtendimento)} • ${variacoesAtivas} ${variacoesAtivas === 1 ? 'variação' : 'variações'}`;
+            productDetails.append(productName, productMeta);
+            productCell.append(cover, productDetails);
+
+            const priceCell = appendCell(row, formatCurrency(produto.precoBase), 'produto-lista-valor', 'Preço base');
+            const stockCell = appendCell(row, String(estoqueTotal), 'produto-lista-estoque', 'Estoque total');
+            const stockDescription = document.createElement('span');
+            stockDescription.className = 'produto-lista-estoque__description';
+            stockDescription.textContent = estoqueTotal === 1 ? 'unidade' : 'unidades';
+            stockCell.append(stockDescription);
 
             const statusCell = document.createElement('td');
+            statusCell.className = 'produto-lista-status';
+            statusCell.dataset.label = 'Status';
             const status = document.createElement('span');
             status.className = `filamento-tag ${produto.arquivado ? 'filamento-tag--esgotado' : 'filamento-tag--disponivel'}`;
             status.textContent = produto.arquivado ? 'Arquivado' : 'Ativo';
@@ -294,11 +307,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             row.append(statusCell);
 
             const actionsCell = document.createElement('td');
+            actionsCell.className = 'produto-lista-acoes';
+            actionsCell.dataset.label = 'Ações';
             const actions = document.createElement('div');
-            actions.className = 'filamento-actions';
+            actions.className = 'filamento-actions produto-lista-acoes__group';
             if (!produto.arquivado) {
             const editButton = document.createElement('button');
             editButton.type = 'button';
+            editButton.className = 'produto-lista-acoes__primary';
             editButton.textContent = 'EDITAR';
             editButton.addEventListener('click', () => {
                 if (!dataLoaded || creatingProduct) return;
@@ -318,6 +334,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             actions.append(editButton);
             const imagesButton = document.createElement('button');
             imagesButton.type = 'button';
+            imagesButton.className = 'produto-lista-acoes__secondary';
             imagesButton.textContent = 'IMAGENS';
             imagesButton.addEventListener('click', () => {
                 document.dispatchEvent(new CustomEvent('rondy:abrir-imagens', { detail: { id: produto.id, nome: produto.nome } }));
@@ -325,6 +342,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             actions.append(imagesButton);
             const variationsButton = document.createElement('button');
             variationsButton.type = 'button';
+            variationsButton.className = 'produto-lista-acoes__secondary';
             variationsButton.textContent = 'VARIAÇÕES';
             variationsButton.addEventListener('click', () => {
                 if (variationBusy || creatingProduct || stockBusy) return;
@@ -341,6 +359,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (isAdmin) {
                 const removalButton = document.createElement('button');
                 removalButton.type = 'button';
+                removalButton.className = produto.arquivado ? 'produto-lista-acoes__primary' : 'produto-lista-acoes__danger';
                 removalButton.textContent = produto.arquivado ? 'REATIVAR' : 'EXCLUIR';
                 removalButton.disabled = productRemovalBusy;
                 removalButton.addEventListener('click', () => {
