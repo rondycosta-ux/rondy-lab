@@ -157,6 +157,15 @@
                             </div>
 
                             <div class="config-field">
+                                <label for="filamento-cor-hex">Referência visual da cor</label>
+                                <div class="filamento-color-picker">
+                                    <input id="filamento-cor-picker" type="color" value="#808080" aria-label="Escolher cor do filamento">
+                                    <input id="filamento-cor-hex" name="corHex" type="text" inputmode="text" maxlength="7" placeholder="#RRGGBB" aria-describedby="filamento-cor-hex-help">
+                                </div>
+                                <p id="filamento-cor-hex-help" class="config-field__description">Opcional. Use o formato #RRGGBB.</p>
+                            </div>
+
+                            <div class="config-field">
                                 <label for="filamento-peso">Peso nominal do rolo</label>
                                 <div class="config-field__input-row">
                                     <input id="filamento-peso" name="pesoNominal" type="number" step="1" min="1" inputmode="numeric" placeholder="1000">
@@ -202,7 +211,6 @@
                             <thead>
                                 <tr>
                                     <th>MATERIAL</th>
-                                    <th>MARCA</th>
                                     <th>LINHA</th>
                                     <th>COR</th>
                                     <th>SALDO</th>
@@ -212,7 +220,7 @@
                                 </tr>
                             </thead>
                             <tbody id="filamentos-table-body">
-                                <tr><td colspan="8" class="empty-state">Aguardando consulta ao Supabase…</td></tr>
+                                <tr><td colspan="7" class="empty-state">Aguardando consulta ao Supabase…</td></tr>
                             </tbody>
                         </table>
                     </div>

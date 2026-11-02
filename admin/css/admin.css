@@ -913,8 +913,35 @@ select option:disabled {
 
 .filamento-actions {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5rem;
+}
+
+.filamento-material { display: grid; gap: 0.12rem; min-width: 112px; }
+.filamento-material strong { font-size: 1rem; letter-spacing: 0.03em; }
+.filamento-material span, .filamento-saldo > span { color: var(--admin-text-soft); font-size: 0.78rem; }
+.filamento-color { display: inline-flex; align-items: center; gap: 0.55rem; white-space: nowrap; }
+.filamento-color i { width: 14px; height: 14px; flex: 0 0 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: var(--filamento-color, #555); }
+.filamento-saldo { display: grid; min-width: 145px; gap: 0.45rem; }
+.filamento-saldo strong { font-size: 0.87rem; white-space: nowrap; }
+.filamento-saldo__track { height: 4px; overflow: hidden; background: rgba(255,255,255,.12); }
+.filamento-saldo__track i { display: block; height: 100%; background: var(--admin-accent); }
+.filamento-color-picker { display: flex; align-items: center; gap: 0.65rem; }
+.filamento-color-picker input[type="color"] { width: 50px; height: 50px; padding: 3px; border: 1px solid var(--admin-line); background: transparent; cursor: pointer; }
+.filamento-color-picker input[type="text"] { flex: 1; }
+
+@media (max-width: 720px) {
+    .filamentos-table { min-width: 0; }
+    .filamentos-table thead { display: none; }
+    .filamentos-table, .filamentos-table tbody, .filamentos-table tr, .filamentos-table td { display: block; width: 100%; }
+    .filamentos-table tbody { display: grid; gap: 0.8rem; }
+    .filamentos-table tbody tr { padding: 1rem; border: 1px solid var(--admin-line); background: rgba(255,255,255,.01); }
+    .filamentos-table td { padding: 0.65rem 0; border-bottom: 1px solid var(--admin-line); }
+    .filamentos-table td[data-label] { display: grid; grid-template-columns: minmax(92px, 38%) minmax(0, 1fr); gap: .8rem; align-items: center; }
+    .filamentos-table td[data-label]::before { content: attr(data-label); color: var(--admin-muted); font-size: .66rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .filamentos-table td:last-child { border-bottom: 0; padding-bottom: 0; }
+    .filamento-actions { overflow-x: auto; padding-bottom: 0.2rem; }
+    .filamento-actions button { flex: 0 0 auto; }
 }
 
 .filamento-actions button {

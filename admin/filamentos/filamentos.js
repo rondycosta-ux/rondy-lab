@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const submitFormButton = form.querySelector('button[type="submit"]');
     const formTitle = document.getElementById('filamento-form-title');
     const formMessage = document.getElementById('filamento-form-message');
+    const colorHexInput = document.getElementById('filamento-cor-hex');
+    const colorPickerInput = document.getElementById('filamento-cor-picker');
+    const colorHexHelp = document.getElementById('filamento-cor-hex-help');
     const tableBody = document.getElementById('filamentos-table-body');
     const searchInput = document.getElementById('filamento-search');
     const statusFilter = document.getElementById('status-filter');
@@ -41,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let selectedFilamentoId = null;
     let filamentos = [];
+    let hexPersistenceAvailable = false;
     let authenticatedUserId = null;
     let pendingRegistration = null;
     let editingFilamentoId = null;
@@ -72,6 +76,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         })[character]);
     }
 
+    function normalizeHex(value) {
+        const hex = String(value || '').trim().toUpperCase();
+        return /^#[0-9A-F]{6}$/.test(hex) ? hex : '';
+    }
+
+    function setColorHexValue(value) {
+        const hex = normalizeHex(value);
+        colorHexInput.value = hex;
+        colorPickerInput.value = hex || '#808080';
+    }
+
+    async function persistColorHex(filamentoId, corHex) {
+        if (!hexPersistenceAvailable) return;
+        const client = window.RondySupabase.getClient();
+        const { error } = await client.rpc('definir_cor_hexadecimal_filamento', {
+            p_filamento_id: filamentoId,
+            p_cor_hexadecimal: corHex || null
+        });
+        if (error) throw error;
+    }
+
     function mapFilamento(row) {
         if (!row || row.user_id !== authenticatedUserId) {
             throw new Error('A consulta retornou um filamento sem propriedade válida.');
@@ -83,6 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             marca: String(row.marca),
             linha: row.linha ?? '',
             cor: String(row.cor),
+            corHex: normalizeHex(row.cor_hexadecimal),
             pesoNominal: databaseNumber(row.peso_nominal, 'peso_nominal'),
             quantidadeDisponivel: databaseNumber(row.quantidade_disponivel, 'quantidade_disponivel'),
             valorPago: databaseNumber(row.valor_pago, 'valor_pago'),
@@ -172,7 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderTableMessage(message) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
-        cell.colSpan = 8;
+        cell.colSpan = 7;
         cell.className = 'empty-state';
         cell.textContent = message;
         row.append(cell);
@@ -261,7 +287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ? 'Edite os dados do filamento selecionado.'
             : 'Preencha os dados para cadastrar um novo filamento.');
         document.getElementById('filamentos-write-status').textContent =
-            'Cadastro e edição de filamentos estão disponíveis. Arquivamento e movimentações permanecem temporariamente indisponíveis.';
+            'Cadastro, edição e arquivamento estão disponíveis. Selecione um filamento ativo para consultar ou registrar movimentações.';
     }
 
     function createUniqueId(prefix) {
@@ -285,6 +311,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             marca: String(formData.get('marca') || '').trim(),
             linha: String(formData.get('linha') || '').trim(),
             cor: String(formData.get('cor') || '').trim(),
+            corHex: normalizeHex(formData.get('corHex')),
             pesoNominal: Number(formData.get('pesoNominal') || 0),
             quantidadeDisponivel: Number(formData.get('quantidadeDisponivel') || 0),
             valorPago: Number(formData.get('valorPago') || 0),
@@ -296,6 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!MATERIALS.includes(values.material)) return 'Selecione um material válido.';
         if (values.marca.length < 2) return 'Informe a marca do filamento.';
         if (values.cor.length < 2) return 'Informe a cor do filamento.';
+        if (colorHexInput.value.trim() && !values.corHex) return 'Informe a cor visual no formato #RRGGBB.';
         if (!Number.isFinite(values.pesoNominal) || values.pesoNominal <= 0) {
             return 'O peso nominal do rolo deve ser maior que zero.';
         }
@@ -370,6 +398,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function closeRegistrationForm() {
         form.reset();
+        setColorHexValue('');
         formPanel.classList.add('is-hidden');
         setFormMode(false);
         setFormMessage('Preencha os dados para cadastrar um novo filamento.');
@@ -399,6 +428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         form.elements.marca.value = filamento.marca;
         form.elements.linha.value = filamento.linha;
         form.elements.cor.value = filamento.cor;
+        setColorHexValue(filamento.corHex);
         form.elements.pesoNominal.value = String(filamento.pesoNominal);
         form.elements.quantidadeDisponivel.value = String(filamento.quantidadeDisponivel);
         form.elements.valorPago.value = String(filamento.valorPago);
@@ -595,6 +625,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 throw new Error('A sessão mudou durante a edição. A tentativa será mantida para confirmação segura.');
             }
 
+            try {
+                await persistColorHex(edit.filamentoId, edit.values.corHex);
+            } catch (hexError) {
+                setLoadStatus(`Filamento atualizado, mas a cor visual não foi salva. ${getErrorMessage(hexError)}`, true);
+            }
             await completeEdit();
         } catch (error) {
             console.error('Falha ou resposta incerta ao editar filamento no Supabase:', error);
@@ -730,6 +765,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 throw new Error('A resposta do Supabase não confirmou os IDs enviados.');
             }
 
+            try {
+                await persistColorHex(registration.filamentoId, values.corHex);
+            } catch (hexError) {
+                setLoadStatus(`Filamento cadastrado, mas a cor visual não foi salva. ${getErrorMessage(hexError)}`, true);
+            }
             await completeRegistration();
         } catch (error) {
             console.error('Falha ou resposta incerta no cadastro de filamento:', error);
@@ -810,9 +850,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             authenticatedUserId = userData.user.id;
             if (!pendingRegistration) enableRegistration();
 
+            const hexProbe = await client.from('filamentos').select('cor_hexadecimal').limit(1);
+            hexPersistenceAvailable = !hexProbe.error;
+            colorHexHelp.textContent = hexPersistenceAvailable
+                ? 'Opcional. Use o formato #RRGGBB.'
+                : 'A cor visual será exibida após aplicar a migration de hexadecimal no Supabase DEV.';
+
+            const columns = `id, user_id, material, marca, linha, cor${hexPersistenceAvailable ? ', cor_hexadecimal' : ''}, peso_nominal, quantidade_disponivel, valor_pago, observacoes, criado_em, atualizado_em, arquivado`;
             const rows = await fetchAllRows(() => client
                 .from('filamentos')
-                .select('id, user_id, material, marca, linha, cor, peso_nominal, quantidade_disponivel, valor_pago, observacoes, criado_em, atualizado_em, arquivado')
+                .select(columns)
                 .eq('user_id', authenticatedUserId)
                 .eq('arquivado', false)
                 .order('criado_em', { ascending: false })
@@ -850,7 +897,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const filterStatus = statusFilter.value;
 
         if (!filamentos.length) {
-            tableBody.innerHTML = '<tr><td colspan="8" class="empty-state">Nenhum filamento ativo foi encontrado no Supabase. Os dados locais não foram importados nem alterados.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="7" class="empty-state">Nenhum filamento ativo foi encontrado no Supabase. Os dados locais não foram importados nem alterados.</td></tr>';
             return;
         }
 
@@ -864,7 +911,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         if (!filtered.length) {
-            tableBody.innerHTML = '<tr><td colspan="8" class="empty-state">Nenhum filamento encontrado para os filtros atuais.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="7" class="empty-state">Nenhum filamento encontrado para os filtros atuais.</td></tr>';
             return;
         }
 
@@ -873,21 +920,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             const status = getStatusBySaldo(filamento);
             const labelClass = getStatusClass(status);
             const saldoText = `${Math.round(safeNumber(filamento.quantidadeDisponivel, 0))} g / ${Math.round(safeNumber(filamento.pesoNominal, 0))} g`;
+            const capacidade = safeNumber(filamento.pesoNominal, 0);
+            const percentualSaldo = capacidade > 0 ? Math.min(100, Math.max(0, (safeNumber(filamento.quantidadeDisponivel, 0) / capacidade) * 100)) : null;
+            const colorStyle = filamento.corHex ? ` style="--filamento-color: ${escapeHTML(filamento.corHex)}"` : '';
 
             return `
                 <tr data-filamento-id="${escapeHTML(filamento.id)}">
-                    <td>
-                        <div class="filamento-info">
-                            <span class="filamento-info__material">${escapeHTML(filamento.material)}</span>
-                        </div>
-                    </td>
-                    <td>${escapeHTML(filamento.marca)}</td>
-                    <td>${escapeHTML(filamento.linha || '—')}</td>
-                    <td>${escapeHTML(filamento.cor)}</td>
-                    <td>${saldoText}</td>
-                    <td>${formatCurrency(custoPorGrama)}/g</td>
-                    <td><span class="filamento-tag ${labelClass}">${status}</span></td>
-                    <td>
+                    <td data-label="Filamento"><div class="filamento-material"><strong>${escapeHTML(filamento.material)}</strong><span>${escapeHTML(filamento.marca)}</span></div></td>
+                    <td data-label="Linha">${escapeHTML(filamento.linha || '—')}</td>
+                    <td data-label="Cor"><span class="filamento-color"${colorStyle}><i aria-hidden="true"></i>${escapeHTML(filamento.cor)}</span></td>
+                    <td data-label="Saldo"><div class="filamento-saldo"><strong>${saldoText}</strong>${percentualSaldo === null ? '<span>Capacidade não informada</span>' : `<div class="filamento-saldo__track" aria-label="${Math.round(percentualSaldo)}% do rolo disponível"><i style="width:${percentualSaldo}%"></i></div>`}</div></td>
+                    <td data-label="Custo">${formatCurrency(custoPorGrama)}/g</td>
+                    <td data-label="Status"><span class="filamento-tag ${labelClass}">${status}</span></td>
+                    <td data-label="Ações">
                         <div class="filamento-actions">
                             <button type="button" data-action="edit" data-id="${escapeHTML(filamento.id)}">EDITAR</button>
                             <button type="button" data-action="movimentacoes" data-id="${escapeHTML(filamento.id)}">MOVIMENTAÇÕES</button>
@@ -1255,6 +1300,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
     movementTypeSelect.addEventListener('change', updateMovementFields);
+    colorPickerInput.addEventListener('input', () => { colorHexInput.value = colorPickerInput.value.toUpperCase(); });
+    colorHexInput.addEventListener('input', () => {
+        const hex = normalizeHex(colorHexInput.value);
+        if (hex) colorPickerInput.value = hex;
+    });
     movimentacaoForm.addEventListener('submit', (event) => { void submitMovement(event); });
 
     searchInput.addEventListener('input', renderFilamentos);
