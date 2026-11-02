@@ -1221,6 +1221,28 @@ select option:disabled {
     font-size: 0.8rem;
 }
 
+.filament-picker { position: relative; }
+.filament-picker__trigger { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: .75rem; border: 1px solid var(--admin-line); background: rgba(255,255,255,.01); color: var(--admin-text); padding: .75rem .9rem; font: inherit; text-align: left; cursor: pointer; }
+.filament-picker__trigger.is-selected { border-color: rgba(255,106,0,.5); }
+.filament-picker__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filament-picker__panel { position: absolute; z-index: 20; top: calc(100% + .45rem); left: 0; width: min(560px, calc(100vw - 3rem)); padding: .8rem; border: 1px solid var(--admin-line); background: #151515; box-shadow: 0 16px 34px rgba(0,0,0,.35); }
+.filament-picker__search { width: 100%; min-height: 44px; box-sizing: border-box; border: 1px solid var(--admin-line); background: #111; color: var(--admin-text); padding: .65rem .75rem; font: inherit; }
+.filament-picker__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; max-height: 310px; overflow: auto; margin-top: .7rem; padding-right: .2rem; }
+.filament-picker__option { display: flex; align-items: center; gap: .65rem; min-width: 0; border: 1px solid var(--admin-line); background: rgba(255,255,255,.01); color: var(--admin-text); padding: .7rem; text-align: left; cursor: pointer; }
+.filament-picker__option:hover, .filament-picker__option:focus-visible, .filament-picker__option.is-selected { border-color: var(--admin-accent); outline: none; }
+.filament-picker__option.is-selected::after { content: '✓'; color: var(--admin-accent); font-weight: 700; margin-left: auto; }
+.filament-picker__color { width: 16px; height: 16px; flex: 0 0 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: var(--filament-color, #555); }
+.filament-picker__details { min-width: 0; display: grid; gap: .18rem; }
+.filament-picker__details strong, .filament-picker__details small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filament-picker__details strong { font-size: .82rem; }
+.filament-picker__details small, .filament-picker__empty { color: var(--admin-text-soft); font-size: .72rem; line-height: 1.4; }
+.filament-picker__empty { margin: .4rem; }
+
+@media (max-width: 640px) {
+    .filament-picker__panel { position: fixed; z-index: 60; top: auto; bottom: 1rem; left: 1rem; width: calc(100vw - 2rem); max-height: min(70vh, 480px); box-sizing: border-box; }
+    .filament-picker__list { grid-template-columns: 1fr; max-height: calc(min(70vh, 480px) - 78px); }
+}
+
 .purpose-options {
     display: flex;
     flex-wrap: wrap;

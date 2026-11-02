@@ -87,6 +87,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return Number(String(value).replace(',', '.'));
     }
 
+    function normalizeHex(value) {
+        const hex = String(value || '').trim().toUpperCase();
+        return /^#[0-9A-F]{6}$/.test(hex) ? hex : '';
+    }
+
     function readCalculationInput(input, label, errors, { required = true } = {}) {
         if (input.validity?.badInput) {
             errors.push(`${label}: informe um número válido.`);
@@ -305,6 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             marca: String(row.marca),
             linha: row.linha ?? '',
             cor: String(row.cor),
+            corHex: normalizeHex(row.cor_hexadecimal),
             pesoNominal: databaseNumber(row.peso_nominal, 'peso_nominal'),
             quantidadeDisponivel: databaseNumber(row.quantidade_disponivel, 'quantidade_disponivel'),
             valorPago: databaseNumber(row.valor_pago, 'valor_pago'),
@@ -429,7 +435,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .order('criado_em', { ascending: true })
                     .order('id', { ascending: true })),
                 fetchAllRows(() => client.from('filamentos')
-                    .select('id, user_id, material, marca, linha, cor, peso_nominal, quantidade_disponivel, valor_pago, arquivado')
+                    .select('id, user_id, material, marca, linha, cor, cor_hexadecimal, peso_nominal, quantidade_disponivel, valor_pago, arquivado')
                     .eq('user_id', userId)
                     .eq('arquivado', false)
                     .order('criado_em', { ascending: true })
@@ -518,6 +524,68 @@ document.addEventListener('DOMContentLoaded', async () => {
         `).join('');
     }
 
+    function getFilamentLabel(filamento) {
+        return filamento
+            ? `${filamento.material} • ${filamento.marca} • ${filamento.linha || 'Sem linha'} • ${filamento.cor}`
+            : 'Selecione um filamento';
+    }
+
+    function renderFilamentPicker(line) {
+        const select = line.querySelector('.material-line__filamento');
+        const trigger = line.querySelector('.filament-picker__trigger');
+        const list = line.querySelector('.filament-picker__list');
+        const search = line.querySelector('.filament-picker__search');
+        const selected = getFilamentoById(select.value);
+        const searchTerm = search.value.trim().toLocaleLowerCase('pt-BR');
+
+        trigger.querySelector('.filament-picker__label').textContent = getFilamentLabel(selected);
+        trigger.classList.toggle('is-selected', Boolean(selected));
+
+        const matches = getFilamentos().filter((filamento) => {
+            const searchable = `${filamento.material} ${filamento.marca} ${filamento.linha} ${filamento.cor}`.toLocaleLowerCase('pt-BR');
+            return !searchTerm || searchable.includes(searchTerm);
+        });
+
+        list.replaceChildren();
+        if (!matches.length) {
+            const empty = document.createElement('p');
+            empty.className = 'filament-picker__empty';
+            empty.textContent = 'Nenhum filamento encontrado.';
+            list.append(empty);
+            return;
+        }
+
+        matches.forEach((filamento) => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'filament-picker__option';
+            option.classList.toggle('is-selected', filamento.id === select.value);
+            option.setAttribute('role', 'option');
+            option.setAttribute('aria-selected', String(filamento.id === select.value));
+            const color = document.createElement('i');
+            color.className = 'filament-picker__color';
+            if (filamento.corHex) color.style.setProperty('--filament-color', filamento.corHex);
+            const details = document.createElement('span');
+            details.className = 'filament-picker__details';
+            const title = document.createElement('strong');
+            title.textContent = `${filamento.material} • ${filamento.cor}`;
+            const meta = document.createElement('small');
+            meta.textContent = `${filamento.marca}${filamento.linha ? ` • ${filamento.linha}` : ''} · ${Number(filamento.quantidadeDisponivel).toLocaleString('pt-BR')} g disponíveis`;
+            details.append(title, meta);
+            option.append(color, details);
+            option.addEventListener('click', () => {
+                select.value = filamento.id;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                line.querySelector('.filament-picker').classList.remove('is-open');
+                line.querySelector('.filament-picker__panel').hidden = true;
+                trigger.setAttribute('aria-expanded', 'false');
+                renderFilamentPicker(line);
+                trigger.focus();
+            });
+            list.append(option);
+        });
+    }
+
     function addMaterialLine({ filamentId = '', grams = '', focus = false } = {}) {
         const index = materialLinesContainer.children.length + 1;
         const materialLine = document.createElement('div');
@@ -531,7 +599,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="material-line__fields">
                 <div class="config-field">
                     <label>Filamento</label>
-                    <select class="material-line__filamento"></select>
+                    <select class="material-line__filamento sr-only" aria-hidden="true" tabindex="-1"></select>
+                    <div class="filament-picker">
+                        <button type="button" class="filament-picker__trigger" aria-expanded="false" aria-haspopup="listbox"><span class="filament-picker__label">Selecione um filamento</span><span aria-hidden="true">⌄</span></button>
+                        <div class="filament-picker__panel" hidden>
+                            <input class="filament-picker__search" type="search" placeholder="Buscar cor, material, marca ou linha" aria-label="Buscar filamento">
+                            <div class="filament-picker__list" role="listbox" aria-label="Filamentos disponíveis"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="config-field">
                     <label>Gramagem necessária</label>
@@ -547,6 +622,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const select = materialLine.querySelector('.material-line__filamento');
         renderFilamentSelectOptions(select, filamentId);
+        const picker = materialLine.querySelector('.filament-picker');
+        const trigger = materialLine.querySelector('.filament-picker__trigger');
+        const panel = materialLine.querySelector('.filament-picker__panel');
+        const search = materialLine.querySelector('.filament-picker__search');
+        renderFilamentPicker(materialLine);
+
+        trigger.addEventListener('click', () => {
+            const isOpen = picker.classList.toggle('is-open');
+            panel.hidden = !isOpen;
+            trigger.setAttribute('aria-expanded', String(isOpen));
+            if (isOpen) {
+                getMaterialLines().forEach((otherLine) => {
+                    if (otherLine !== materialLine) {
+                        otherLine.querySelector('.filament-picker')?.classList.remove('is-open');
+                        const otherPanel = otherLine.querySelector('.filament-picker__panel');
+                        if (otherPanel) otherPanel.hidden = true;
+                        otherLine.querySelector('.filament-picker__trigger')?.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                search.focus();
+            }
+        });
+        search.addEventListener('input', () => renderFilamentPicker(materialLine));
+        picker.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                picker.classList.remove('is-open');
+                panel.hidden = true;
+                trigger.setAttribute('aria-expanded', 'false');
+                trigger.focus();
+            } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                const options = Array.from(list.querySelectorAll('.filament-picker__option'));
+                const currentIndex = options.indexOf(document.activeElement);
+                const nextIndex = event.key === 'ArrowDown'
+                    ? Math.min(options.length - 1, currentIndex + 1)
+                    : Math.max(0, currentIndex - 1);
+                if (options[nextIndex]) {
+                    event.preventDefault();
+                    options[nextIndex].focus();
+                }
+            }
+        });
 
         materialLine.querySelector('.material-line__remove').addEventListener('click', () => {
             if (materialLinesContainer.children.length > 1) {
