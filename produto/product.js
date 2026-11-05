@@ -79,5 +79,5 @@ document.addEventListener('DOMContentLoaded', () => {
     article.append(media, content);
     container.append(article);
 
-    document.title = `${product.name} | Rondy Lab`;
+    document.title = `${product.name} | FazLab`;
 });

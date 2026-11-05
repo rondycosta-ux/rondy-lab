@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consignação | Rondy Lab Admin</title>
-    <meta name="description" content="Módulo de consignação do admin da Rondy Lab.">
+    <title>Consignação | FazLab Admin</title>
+    <meta name="description" content="Módulo de consignação do admin da FazLab.">
     <link rel="stylesheet" href="/admin/css/admin.css">
     <link rel="stylesheet" href="/admin/css/auth.css">
     <meta name="robots" content="noindex, nofollow">
@@ -25,8 +25,8 @@
     <div class="admin-shell">
         <aside class="admin-sidebar">
             <div class="admin-sidebar__top">
-                <a href="/admin/" class="admin-brand" aria-label="Rondy Lab Admin - Dashboard">
-                    <img src="/assets/images/logo.png" alt="Rondy Lab">
+                <a href="/admin/" class="admin-brand" aria-label="FazLab Admin - Dashboard">
+                    <img src="/assets/images/logo-v2.png" alt="FazLab">
                 </a>
                 <p class="admin-sidebar__label">ADMIN</p>
             </div>
@@ -82,7 +82,7 @@
                     <span></span><span></span><span></span>
                 </button>
                 <div>
-                    <p class="admin-header__eyebrow">RONDY LAB / ADMIN</p>
+                    <p class="admin-header__eyebrow">FazLab / ADMIN</p>
                     <h1 class="admin-header__title">CONSIGNAÇÃO</h1>
                 </div>
             </header>
@@ -136,7 +136,7 @@
                         </div>
                         <div class="admin-table-wrap"><table class="consignacao-conferencia-tabela"><thead><tr><th>Produto / variação</th><th>Esperado</th><th>Encontrado</th><th>Diferença</th><th>Vendido</th><th>Perdido</th><th>Quebrado</th><th>Extrav.</th><th>Preço unit.</th></tr></thead><tbody id="consignacao-conferencia-itens"></tbody></table></div>
                         <p id="consignacao-conferencia-vazia" class="admin-form-message">Selecione um estabelecimento com saldo consignado positivo.</p>
-                        <div class="consignacao-conferencia-resumo"><span>Vendido: <strong id="consignacao-conferencia-total-vendido">0</strong></span><span>Bruto: <strong id="consignacao-conferencia-total-bruto">R$ 0,00</strong></span><span>Comissão: <strong id="consignacao-conferencia-total-comissao">R$ 0,00</strong></span><span>Líquido Rondy Lab: <strong id="consignacao-conferencia-total-liquido">R$ 0,00</strong></span></div>
+                        <div class="consignacao-conferencia-resumo"><span>Vendido: <strong id="consignacao-conferencia-total-vendido">0</strong></span><span>Bruto: <strong id="consignacao-conferencia-total-bruto">R$ 0,00</strong></span><span>Comissão: <strong id="consignacao-conferencia-total-comissao">R$ 0,00</strong></span><span>Líquido FazLab: <strong id="consignacao-conferencia-total-liquido">R$ 0,00</strong></span></div>
                         <div class="filamento-form__footer"><p id="consignacao-conferencia-mensagem" class="admin-form-message" aria-live="polite"></p><div class="filamento-form__actions"><button id="consignacao-conferencia-confirmar" type="submit" class="admin-button admin-button--primary" disabled>CONFIRMAR CONFERÊNCIA</button></div></div>
                     </form>
                 </section>
@@ -152,7 +152,7 @@
                         <div class="filamento-form__grid"><div class="config-field"><label for="consignacao-fechamento-estabelecimento">Estabelecimento</label><select id="consignacao-fechamento-estabelecimento" name="estabelecimento" required></select></div><div class="config-field consignacao-movimento-observacao"><label for="consignacao-fechamento-observacao">Observação do fechamento</label><textarea id="consignacao-fechamento-observacao" name="observacao" maxlength="1000" required></textarea></div></div>
                         <div class="admin-table-wrap"><table><thead><tr><th></th><th>Visita</th><th>Confirmada em</th><th>Identificador</th><th>Bruto</th><th>Comissão</th><th>Líquido</th></tr></thead><tbody id="consignacao-fechamento-conferencias-disponiveis"></tbody></table></div>
                         <p id="consignacao-fechamento-vazio" class="admin-form-message">Selecione um estabelecimento para ver conferências sem fechamento.</p>
-                        <div class="consignacao-conferencia-resumo"><span>Bruto: <strong id="consignacao-fechamento-bruto">R$ 0,00</strong></span><span>Comissão: <strong id="consignacao-fechamento-comissao">R$ 0,00</strong></span><span>Líquido Rondy Lab: <strong id="consignacao-fechamento-liquido">R$ 0,00</strong></span></div>
+                        <div class="consignacao-conferencia-resumo"><span>Bruto: <strong id="consignacao-fechamento-bruto">R$ 0,00</strong></span><span>Comissão: <strong id="consignacao-fechamento-comissao">R$ 0,00</strong></span><span>Líquido FazLab: <strong id="consignacao-fechamento-liquido">R$ 0,00</strong></span></div>
                         <div class="filamento-form__footer"><p id="consignacao-fechamento-mensagem" class="admin-form-message" aria-live="polite"></p><div class="filamento-form__actions"><button id="consignacao-fechamento-criar" type="submit" class="admin-button admin-button--primary" disabled>CRIAR FECHAMENTO</button></div></div>
                     </form>
                     <section class="consignacao-financeiro-resumo"><span>Total devido: <strong id="consignacao-financeiro-devido">R$ 0,00</strong></span><span>Recebido: <strong id="consignacao-financeiro-recebido">R$ 0,00</strong></span><span>Pendente: <strong id="consignacao-financeiro-pendente">R$ 0,00</strong></span></section>

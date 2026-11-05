@@ -25,10 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const productNameNode = document.getElementById('contact-product-name');
         const whatsappLink = document.getElementById('whatsapp-link');
 
-        const baseMessage = 'Olá! Vim pelo site da Rondy Lab e gostaria de mais informações.';
+        const baseMessage = 'Olá! Vim pelo site da FazLab e gostaria de mais informações.';
         const buildMessage = (name) => {
             const message = name
-                ? `Olá! Vim pelo site da Rondy Lab e tenho interesse no produto: ${name}.`
+                ? `Olá! Vim pelo site da FazLab e tenho interesse no produto: ${name}.`
                 : baseMessage;
             return encodeURIComponent(message);
         };
