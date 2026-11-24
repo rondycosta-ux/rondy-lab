@@ -17,6 +17,142 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const heroSlider = document.querySelector('.hero-slider');
+    if (heroSlider) {
+        const track = heroSlider.querySelector('.hero__track');
+        const slides = Array.from(heroSlider.querySelectorAll('.hero__slide'));
+        const indicators = Array.from(heroSlider.querySelectorAll('.hero-slider__indicator'));
+        const previousButton = heroSlider.querySelector('.hero-slider__arrow--previous');
+        const nextButton = heroSlider.querySelector('.hero-slider__arrow--next');
+        const toggleButton = heroSlider.querySelector('.hero-slider__toggle');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let activeIndex = 0;
+        let timerId;
+        let userPaused = false;
+        let hovering = false;
+        let focusing = false;
+        let touching = false;
+        let pointerStartX = 0;
+
+        const shouldAutoplay = () => !userPaused && !hovering && !focusing && !touching && !reducedMotion.matches;
+
+        const stopAutoplay = () => {
+            window.clearInterval(timerId);
+            timerId = undefined;
+        };
+
+        const updateToggle = () => {
+            const isPaused = userPaused || reducedMotion.matches;
+            toggleButton.textContent = isPaused ? '▶' : 'Ⅱ';
+            toggleButton.setAttribute('aria-pressed', String(isPaused));
+            toggleButton.setAttribute(
+                'aria-label',
+                reducedMotion.matches
+                    ? 'Transições automáticas desativadas pela preferência de movimento reduzido'
+                    : isPaused ? 'Reproduzir transições automáticas' : 'Pausar transições automáticas'
+            );
+            toggleButton.disabled = reducedMotion.matches;
+        };
+
+        const startAutoplay = () => {
+            stopAutoplay();
+            if (shouldAutoplay()) {
+                timerId = window.setInterval(() => showSlide(activeIndex + 1), 3000);
+            }
+        };
+
+        const refreshAutoplay = () => {
+            updateToggle();
+            startAutoplay();
+        };
+
+        const showSlide = (index) => {
+            activeIndex = (index + slides.length) % slides.length;
+            track.style.transform = `translateX(-${activeIndex * 100}%)`;
+
+            slides.forEach((slide, slideIndex) => {
+                const isActive = slideIndex === activeIndex;
+                slide.classList.toggle('is-active', isActive);
+                slide.setAttribute('aria-hidden', String(!isActive));
+                slide.inert = !isActive;
+            });
+
+            indicators.forEach((indicator, indicatorIndex) => {
+                const isActive = indicatorIndex === activeIndex;
+                indicator.classList.toggle('is-active', isActive);
+                indicator.setAttribute('aria-current', String(isActive));
+            });
+        };
+
+        const pauseForInteraction = (event) => {
+            touching = true;
+            pointerStartX = event.clientX;
+            refreshAutoplay();
+        };
+
+        const resumeAfterInteraction = (event) => {
+            const horizontalDistance = event.clientX - pointerStartX;
+            if (Math.abs(horizontalDistance) > 40) {
+                showSlide(activeIndex + (horizontalDistance < 0 ? 1 : -1));
+            }
+            touching = false;
+            refreshAutoplay();
+        };
+
+        previousButton.addEventListener('click', () => showSlide(activeIndex - 1));
+        nextButton.addEventListener('click', () => showSlide(activeIndex + 1));
+        indicators.forEach((indicator, index) => indicator.addEventListener('click', () => showSlide(index)));
+        toggleButton.addEventListener('click', () => {
+            userPaused = !userPaused;
+            refreshAutoplay();
+        });
+
+        heroSlider.addEventListener('mouseenter', () => {
+            hovering = true;
+            refreshAutoplay();
+        });
+        heroSlider.addEventListener('mouseleave', () => {
+            hovering = false;
+            refreshAutoplay();
+        });
+        heroSlider.addEventListener('focusin', () => {
+            focusing = true;
+            refreshAutoplay();
+        });
+        heroSlider.addEventListener('focusout', () => {
+            window.setTimeout(() => {
+                focusing = heroSlider.contains(document.activeElement);
+                refreshAutoplay();
+            }, 0);
+        });
+        heroSlider.addEventListener('pointerdown', pauseForInteraction);
+        heroSlider.addEventListener('pointerup', resumeAfterInteraction);
+        heroSlider.addEventListener('pointercancel', () => {
+            touching = false;
+            refreshAutoplay();
+        });
+        heroSlider.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                showSlide(activeIndex - 1);
+            }
+            if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                showSlide(activeIndex + 1);
+            }
+        });
+
+        heroSlider.querySelectorAll('.hero__image').forEach((image) => {
+            image.addEventListener('error', () => image.closest('.hero__visual').classList.add('is-image-unavailable'));
+        });
+        reducedMotion.addEventListener('change', (event) => {
+            refreshAutoplay();
+        });
+
+        showSlide(0);
+        refreshAutoplay();
+    }
+
     const contactPage = document.querySelector('.contact-page');
     if (contactPage) {
         const params = new URLSearchParams(window.location.search);

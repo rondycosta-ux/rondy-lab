@@ -31,25 +31,60 @@
     </header>
 
     <main>
-        <section class="hero" aria-labelledby="hero-title">
-            <div class="hero__content">
-                <p class="hero__eyebrow">FazLab • IMPRESSÃO 3D</p>
-                <h1 id="hero-title" class="hero__title">
-                    IDEIAS GANHAM<br>
-                    <span class="hero__title--accent">FORMA.</span>
-                </h1>
-                <p class="hero__text">
-                    Transformamos ideias em objetos, colecionáveis e soluções através da impressão 3D.
-                </p>
+        <section class="hero hero-slider" aria-label="Campanhas em destaque" aria-roledescription="carrossel">
+            <div class="hero__track">
+                <article class="hero__slide is-active" aria-hidden="false">
+                    <div class="hero__content">
+                        <p class="hero__eyebrow">FazLab • IMPRESSÃO 3D</p>
+                        <h1 id="hero-title" class="hero__title">
+                            IDEIAS GANHAM<br>
+                            <span class="hero__title--accent">FORMA.</span>
+                        </h1>
+                        <p class="hero__text">
+                            Transformamos ideias em objetos, colecionáveis e soluções através da impressão 3D.
+                        </p>
 
-                <div class="hero__actions">
-                    <a class="btn btn--primary" href="/catalogo/">CONHEÇA NOSSOS PRODUTOS</a>
-                    <a class="btn btn--secondary" href="/sobre/">SOBRE A FazLab</a>
-                </div>
+                        <div class="hero__actions">
+                            <a class="btn btn--primary" href="/catalogo/">CONHEÇA NOSSOS PRODUTOS</a>
+                            <a class="btn btn--secondary" href="/sobre/">SOBRE A FazLab</a>
+                        </div>
+                    </div>
+
+                    <div class="hero__visual" aria-hidden="true">
+                        <img class="hero__image" src="assets/images/hero-products.png" alt="" loading="eager">
+                    </div>
+                </article>
+                <article class="hero__slide" aria-hidden="true" inert>
+                    <div class="hero__content">
+                        <p class="hero__eyebrow">FazLab • PARCERIAS COMERCIAIS</p>
+                        <h2 class="hero__title hero__title--consignment">
+                            VENDA MAIS.<br>
+                            <span class="hero__title--accent">SEM INVESTIMENTO INICIAL.</span>
+                        </h2>
+                        <p class="hero__text">
+                            Aumente o ticket médio do seu negócio com chaveiros em consignação. Pague apenas pelo que vender.
+                        </p>
+
+                        <div class="hero__actions">
+                            <a class="btn btn--primary" href="/contato/">QUERO SER UM PARCEIRO</a>
+                        </div>
+                    </div>
+
+                    <div class="hero__visual hero__visual--consignment" aria-hidden="true">
+                        <img class="hero__image" src="assets/images/banner-consignacao.png" alt="" loading="lazy">
+                        <span class="hero__image-fallback">Imagem de consignação em breve</span>
+                    </div>
+                </article>
             </div>
 
-            <div class="hero__visual" aria-hidden="true">
-                <img class="hero__image" src="assets/images/hero-products.png" alt="" loading="eager" />
+            <button class="hero-slider__arrow hero-slider__arrow--previous" type="button" aria-label="Ver campanha anterior">←</button>
+            <button class="hero-slider__arrow hero-slider__arrow--next" type="button" aria-label="Ver próxima campanha">→</button>
+            <div class="hero-slider__controls">
+                <div class="hero-slider__indicators" aria-label="Selecionar campanha">
+                    <button class="hero-slider__indicator is-active" type="button" aria-label="Ir para a campanha 1" aria-current="true"></button>
+                    <button class="hero-slider__indicator" type="button" aria-label="Ir para a campanha 2" aria-current="false"></button>
+                </div>
+                <button class="hero-slider__toggle" type="button" aria-label="Pausar transições automáticas" aria-pressed="false">Ⅱ</button>
             </div>
         </section>
 
